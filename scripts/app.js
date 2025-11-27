@@ -20,10 +20,16 @@ let playbackSpeed = 1; // 재생 속도 (0.5x, 1x, 2x, 4x)
 let drawnItems = null; // 그리기 레이어
 let drawControl = null; // 그리기 컨트롤
 let isDrawMode = false; // 그리기 모드 활성화 여부
+
+// 그리기 도구 활성화
 let currentDrawHandler = null; // 현재 활성 그리기 핸들러
 let isFreehandDrawing = false; // 자유 그리기 모드
 let freehandPath = []; // 자유 그리기 경로
 let freehandPolyline = null; // 자유 그리기 임시 선
+
+// 시대 줌 관련 변수
+let currentEraIndex = 2; // 기본값: 삼국시대 (475년)
+let isEraTransitioning = false; // 시대 전환 애니메이션 중
 
 // 교과서 뷰어 전역 변수
 let currentPage = 0;
@@ -199,96 +205,162 @@ const battleData = {
     '300_500': [
         { name: '비수대전', year: 383, lat: 33.0, lng: 117.0, participants: ['동진', '전진'], outcome: '동진 승리' },
         { name: '평양성 전투', year: 427, lat: 39.0, lng: 125.7, participants: ['고구려', '북연'], outcome: '고구려 승리' },
-        { name: '관미성 전투', year: 475, lat: 37.4, lng: 127.1, participants: ['고구려', '백제'], outcome: '고구려 승리',
-          troops: {attacker: {name: '고구려군', from: {lat: 39.0, lng: 125.7}, to: {lat: 37.4, lng: 127.1}}} }
+        {
+            name: '관미성 전투', year: 475, lat: 37.4, lng: 127.1, participants: ['고구려', '백제'], outcome: '고구려 승리',
+            troops: { attacker: { name: '고구려군', from: { lat: 39.0, lng: 125.7 }, to: { lat: 37.4, lng: 127.1 } } }
+        }
     ],
     '500_700': [
-        { name: '살수대첩', year: 612, lat: 39.7, lng: 125.4, participants: ['고구려', '수나라'], outcome: '고구려 대승',
-          troops: {attacker: {name: '수나라군', from: {lat: 40.5, lng: 116.4}, to: {lat: 39.7, lng: 125.4}, type: 'land', 
-            waypoints: [
-              {lat: 40.6, lng: 117.0}, {lat: 40.7, lng: 118.0}, {lat: 40.8, lng: 119.0}, // 산해관 북쪽
-              {lat: 41.0, lng: 120.0}, {lat: 41.2, lng: 121.0}, {lat: 41.5, lng: 122.0}, // 요동반도 북부
-              {lat: 41.6, lng: 123.0}, {lat: 41.5, lng: 124.0}, {lat: 41.3, lng: 124.8}, // 요양
-              {lat: 40.8, lng: 125.2}, {lat: 40.3, lng: 125.3}, {lat: 39.9, lng: 125.4}  // 압록강→평양
-            ]}} },
-        { name: '황산벌 전투', year: 660, lat: 36.0, lng: 127.1, participants: ['신라당연합', '백제'], outcome: '신라당 승리',
-          troops: {attacker: {name: '신라군', from: {lat: 35.8, lng: 129.2}, to: {lat: 36.0, lng: 127.1}, type: 'land',
-            waypoints: [{lat: 35.85, lng: 129.0}, {lat: 35.9, lng: 128.5}, {lat: 35.93, lng: 128.0}, {lat: 35.95, lng: 127.8}, {lat: 35.97, lng: 127.5}, {lat: 35.98, lng: 127.3}]}} },
-        { name: '안시성 전투', year: 645, lat: 40.5, lng: 124.3, participants: ['고구려', '당나라'], outcome: '고구려 승리',
-          troops: {attacker: {name: '당나라군', from: {lat: 40.0, lng: 116.4}, to: {lat: 40.5, lng: 124.3}, type: 'land', 
-            waypoints: [
-              {lat: 40.6, lng: 117.0}, {lat: 40.7, lng: 118.0}, {lat: 40.8, lng: 119.0}, // 산해관 북쪽
-              {lat: 41.0, lng: 120.0}, {lat: 41.2, lng: 121.0}, {lat: 41.4, lng: 122.0}, // 요동반도 북부
-              {lat: 41.3, lng: 123.0}, {lat: 41.0, lng: 123.8}, {lat: 40.7, lng: 124.2}  // 요양→안시성
-            ]}} },
+        {
+            name: '살수대첩', year: 612, lat: 39.7, lng: 125.4, participants: ['고구려', '수나라'], outcome: '고구려 대승',
+            troops: {
+                attacker: {
+                    name: '수나라군', from: { lat: 40.5, lng: 116.4 }, to: { lat: 39.7, lng: 125.4 }, type: 'land',
+                    waypoints: [
+                        { lat: 40.6, lng: 117.0 }, { lat: 40.7, lng: 118.0 }, { lat: 40.8, lng: 119.0 }, // 산해관 북쪽
+                        { lat: 41.0, lng: 120.0 }, { lat: 41.2, lng: 121.0 }, { lat: 41.5, lng: 122.0 }, // 요동반도 북부
+                        { lat: 41.6, lng: 123.0 }, { lat: 41.5, lng: 124.0 }, { lat: 41.3, lng: 124.8 }, // 요양
+                        { lat: 40.8, lng: 125.2 }, { lat: 40.3, lng: 125.3 }, { lat: 39.9, lng: 125.4 }  // 압록강→평양
+                    ]
+                }
+            }
+        },
+        {
+            name: '황산벌 전투', year: 660, lat: 36.0, lng: 127.1, participants: ['신라당연합', '백제'], outcome: '신라당 승리',
+            troops: {
+                attacker: {
+                    name: '신라군', from: { lat: 35.8, lng: 129.2 }, to: { lat: 36.0, lng: 127.1 }, type: 'land',
+                    waypoints: [{ lat: 35.85, lng: 129.0 }, { lat: 35.9, lng: 128.5 }, { lat: 35.93, lng: 128.0 }, { lat: 35.95, lng: 127.8 }, { lat: 35.97, lng: 127.5 }, { lat: 35.98, lng: 127.3 }]
+                }
+            }
+        },
+        {
+            name: '안시성 전투', year: 645, lat: 40.5, lng: 124.3, participants: ['고구려', '당나라'], outcome: '고구려 승리',
+            troops: {
+                attacker: {
+                    name: '당나라군', from: { lat: 40.0, lng: 116.4 }, to: { lat: 40.5, lng: 124.3 }, type: 'land',
+                    waypoints: [
+                        { lat: 40.6, lng: 117.0 }, { lat: 40.7, lng: 118.0 }, { lat: 40.8, lng: 119.0 }, // 산해관 북쪽
+                        { lat: 41.0, lng: 120.0 }, { lat: 41.2, lng: 121.0 }, { lat: 41.4, lng: 122.0 }, // 요동반도 북부
+                        { lat: 41.3, lng: 123.0 }, { lat: 41.0, lng: 123.8 }, { lat: 40.7, lng: 124.2 }  // 요양→안시성
+                    ]
+                }
+            }
+        },
         { name: '백강 전투', year: 663, lat: 37.8, lng: 126.6, participants: ['신라당연합', '백제왜연합'], outcome: '신라당 승리' }
     ],
     '700_900': [
         { name: '매초성 전투', year: 733, lat: 43.8, lng: 127.5, participants: ['발해', '당나라'], outcome: '발해 승리' }
     ],
     '900_1100': [
-        { name: '귀주대첩', year: 1019, lat: 38.9, lng: 125.2, participants: ['고려', '거란'], outcome: '고려 대승',
-          troops: {attacker: {name: '거란군', from: {lat: 42.0, lng: 120.0}, to: {lat: 38.9, lng: 125.2}, type: 'land', 
-            waypoints: [
-              {lat: 42.0, lng: 121.0}, {lat: 42.0, lng: 122.0}, {lat: 41.8, lng: 123.0}, // 요동반도 북부
-              {lat: 41.6, lng: 123.8}, {lat: 41.4, lng: 124.4}, {lat: 41.2, lng: 124.8}, // 요양
-              {lat: 40.8, lng: 125.1}, {lat: 40.4, lng: 125.2}, {lat: 40.0, lng: 125.2}, // 압록강
-              {lat: 39.6, lng: 125.2}, {lat: 39.3, lng: 125.2}, {lat: 39.0, lng: 125.2} // 평안도
-            ]}} }
+        {
+            name: '귀주대첩', year: 1019, lat: 38.9, lng: 125.2, participants: ['고려', '거란'], outcome: '고려 대승',
+            troops: {
+                attacker: {
+                    name: '거란군', from: { lat: 42.0, lng: 120.0 }, to: { lat: 38.9, lng: 125.2 }, type: 'land',
+                    waypoints: [
+                        { lat: 42.0, lng: 121.0 }, { lat: 42.0, lng: 122.0 }, { lat: 41.8, lng: 123.0 }, // 요동반도 북부
+                        { lat: 41.6, lng: 123.8 }, { lat: 41.4, lng: 124.4 }, { lat: 41.2, lng: 124.8 }, // 요양
+                        { lat: 40.8, lng: 125.1 }, { lat: 40.4, lng: 125.2 }, { lat: 40.0, lng: 125.2 }, // 압록강
+                        { lat: 39.6, lng: 125.2 }, { lat: 39.3, lng: 125.2 }, { lat: 39.0, lng: 125.2 } // 평안도
+                    ]
+                }
+            }
+        }
     ],
     '1100_1300': [
-        { name: '처인성 전투', year: 1232, lat: 37.2, lng: 127.4, participants: ['고려', '몽골'], outcome: '고려 승리',
-          troops: {attacker: {name: '몽골군', from: {lat: 40.0, lng: 116.4}, to: {lat: 37.2, lng: 127.4}, type: 'land', 
-            waypoints: [
-              {lat: 40.5, lng: 117.0}, {lat: 40.8, lng: 118.0}, {lat: 41.0, lng: 119.0}, // 산해관 북쪽
-              {lat: 41.2, lng: 120.0}, {lat: 41.5, lng: 121.5}, {lat: 41.6, lng: 123.0}, // 요동반도 북부
-              {lat: 41.4, lng: 124.0}, {lat: 41.0, lng: 124.8}, {lat: 40.5, lng: 125.3}, // 요양→압록강
-              {lat: 39.8, lng: 125.8}, {lat: 39.0, lng: 126.3}, {lat: 38.3, lng: 126.8}, // 평안도→황해도
-              {lat: 37.8, lng: 127.1}, {lat: 37.5, lng: 127.3}  // 경기도
-            ]}} }
+        {
+            name: '처인성 전투', year: 1232, lat: 37.2, lng: 127.4, participants: ['고려', '몽골'], outcome: '고려 승리',
+            troops: {
+                attacker: {
+                    name: '몽골군', from: { lat: 40.0, lng: 116.4 }, to: { lat: 37.2, lng: 127.4 }, type: 'land',
+                    waypoints: [
+                        { lat: 40.5, lng: 117.0 }, { lat: 40.8, lng: 118.0 }, { lat: 41.0, lng: 119.0 }, // 산해관 북쪽
+                        { lat: 41.2, lng: 120.0 }, { lat: 41.5, lng: 121.5 }, { lat: 41.6, lng: 123.0 }, // 요동반도 북부
+                        { lat: 41.4, lng: 124.0 }, { lat: 41.0, lng: 124.8 }, { lat: 40.5, lng: 125.3 }, // 요양→압록강
+                        { lat: 39.8, lng: 125.8 }, { lat: 39.0, lng: 126.3 }, { lat: 38.3, lng: 126.8 }, // 평안도→황해도
+                        { lat: 37.8, lng: 127.1 }, { lat: 37.5, lng: 127.3 }  // 경기도
+                    ]
+                }
+            }
+        }
     ],
     '1300_1400': [
         { name: '홍건적의 난', year: 1361, lat: 37.9, lng: 127.7, participants: ['고려', '홍건적'], outcome: '고려 승리' }
     ],
     '1400_1600': [
-        { name: '임진왜란', year: 1592, lat: 35.2, lng: 129.0, participants: ['조선', '일본', '명나라'], outcome: '조선명 승리',
-          troops: {attacker: {name: '왜군', from: {lat: 33.5, lng: 130.5}, to: {lat: 35.2, lng: 129.0}, type: 'sea', waypoints: [{lat: 34.0, lng: 129.5}, {lat: 34.5, lng: 129.3}]}} },
-        { name: '한산도대첩', year: 1592, lat: 34.8, lng: 128.4, participants: ['조선수군', '일본수군'], outcome: '조선 대승',
-          troops: {attacker: {name: '왜수군', from: {lat: 34.5, lng: 128.0}, to: {lat: 34.8, lng: 128.4}, type: 'sea'}} },
-        { name: '한산도 대첩', year: 1592, lat: 34.8, lng: 128.4, participants: ['조선수군', '일본수군'], outcome: '조선 대승',
-          troops: {attacker: {name: '왜수군', from: {lat: 34.5, lng: 128.0}, to: {lat: 34.8, lng: 128.4}, type: 'sea'}} },
-        { name: '명량해전', year: 1597, lat: 34.5, lng: 126.3, participants: ['조선수군', '일본수군'], outcome: '조선 대승',
-          troops: {attacker: {name: '왜수군', from: {lat: 34.3, lng: 126.5}, to: {lat: 34.5, lng: 126.3}, type: 'sea'}} },
-        { name: '노량해전', year: 1598, lat: 34.6, lng: 128.0, participants: ['조선수군', '일본수군'], outcome: '조선 승리',
-          troops: {attacker: {name: '왜수군', from: {lat: 34.4, lng: 128.2}, to: {lat: 34.6, lng: 128.0}, type: 'sea'}} },
-        { name: '행주대첩', year: 1593, lat: 37.6, lng: 126.8, participants: ['조선', '일본'], outcome: '조선 승리',
-          troops: {attacker: {name: '왜군', from: {lat: 37.5, lng: 127.0}, to: {lat: 37.6, lng: 126.8}, type: 'land'}} }
+        {
+            name: '임진왜란', year: 1592, lat: 35.2, lng: 129.0, participants: ['조선', '일본', '명나라'], outcome: '조선명 승리',
+            troops: { attacker: { name: '왜군', from: { lat: 33.5, lng: 130.5 }, to: { lat: 35.2, lng: 129.0 }, type: 'sea', waypoints: [{ lat: 34.0, lng: 129.5 }, { lat: 34.5, lng: 129.3 }] } }
+        },
+        {
+            name: '한산도대첩', year: 1592, lat: 34.8, lng: 128.4, participants: ['조선수군', '일본수군'], outcome: '조선 대승',
+            troops: { attacker: { name: '왜수군', from: { lat: 34.5, lng: 128.0 }, to: { lat: 34.8, lng: 128.4 }, type: 'sea' } }
+        },
+        {
+            name: '한산도 대첩', year: 1592, lat: 34.8, lng: 128.4, participants: ['조선수군', '일본수군'], outcome: '조선 대승',
+            troops: { attacker: { name: '왜수군', from: { lat: 34.5, lng: 128.0 }, to: { lat: 34.8, lng: 128.4 }, type: 'sea' } }
+        },
+        {
+            name: '명량해전', year: 1597, lat: 34.5, lng: 126.3, participants: ['조선수군', '일본수군'], outcome: '조선 대승',
+            troops: { attacker: { name: '왜수군', from: { lat: 34.3, lng: 126.5 }, to: { lat: 34.5, lng: 126.3 }, type: 'sea' } }
+        },
+        {
+            name: '노량해전', year: 1598, lat: 34.6, lng: 128.0, participants: ['조선수군', '일본수군'], outcome: '조선 승리',
+            troops: { attacker: { name: '왜수군', from: { lat: 34.4, lng: 128.2 }, to: { lat: 34.6, lng: 128.0 }, type: 'sea' } }
+        },
+        {
+            name: '행주대첩', year: 1593, lat: 37.6, lng: 126.8, participants: ['조선', '일본'], outcome: '조선 승리',
+            troops: { attacker: { name: '왜군', from: { lat: 37.5, lng: 127.0 }, to: { lat: 37.6, lng: 126.8 }, type: 'land' } }
+        }
     ],
     '1600_1800': [
-        { name: '병자호란', year: 1636, lat: 37.5, lng: 127.0, participants: ['조선', '청나라'], outcome: '청나라 승리',
-          troops: {attacker: {name: '청군', from: {lat: 40.0, lng: 116.4}, to: {lat: 37.5, lng: 127.0}, type: 'land', 
-            waypoints: [
-              {lat: 40.5, lng: 117.5}, {lat: 40.8, lng: 118.5}, {lat: 41.0, lng: 119.5}, // 산해관 북쪽
-              {lat: 41.3, lng: 121.0}, {lat: 41.5, lng: 122.5}, {lat: 41.4, lng: 123.8}, // 요동반도 북부
-              {lat: 41.0, lng: 124.6}, {lat: 40.5, lng: 125.2}, {lat: 40.0, lng: 125.5}, // 요양→압록강
-              {lat: 39.3, lng: 126.0}, {lat: 38.5, lng: 126.5}, {lat: 38.0, lng: 126.8}  // 평안도→한성
-            ]}} },
-        { name: '의주 전투', year: 1636, lat: 40.2, lng: 124.5, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-          troops: {attacker: {name: '청군', from: {lat: 40.5, lng: 124.0}, to: {lat: 40.2, lng: 124.5}, type: 'land'}} },
-        { name: '정주성 전투', year: 1636, lat: 39.7, lng: 125.2, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-          troops: {attacker: {name: '청군', from: {lat: 40.2, lng: 124.5}, to: {lat: 39.7, lng: 125.2}, type: 'land'}} },
-        { name: '안주성 전투', year: 1636, lat: 39.6, lng: 125.7, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-          troops: {attacker: {name: '청군', from: {lat: 39.7, lng: 125.2}, to: {lat: 39.6, lng: 125.7}, type: 'land'}} },
-        { name: '평양성 전투', year: 1636, lat: 39.0, lng: 125.8, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-          troops: {attacker: {name: '청군', from: {lat: 39.6, lng: 125.7}, to: {lat: 39.0, lng: 125.8}, type: 'land'}} },
-        { name: '황주 전투', year: 1637, lat: 38.6, lng: 125.8, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-          troops: {attacker: {name: '청군', from: {lat: 39.0, lng: 125.8}, to: {lat: 38.6, lng: 125.8}, type: 'land'}} },
-        { name: '남한산성 포위전', year: 1637, lat: 37.48, lng: 127.18, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-          troops: {attacker: {name: '청군', from: {lat: 37.5, lng: 127.0}, to: {lat: 37.48, lng: 127.18}, type: 'land'}} },
-        { name: '쌍령 전투', year: 1637, lat: 37.7, lng: 127.3, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-          troops: {attacker: {name: '청군', from: {lat: 37.5, lng: 127.0}, to: {lat: 37.7, lng: 127.3}, type: 'land'}} },
-        { name: '김화 전투', year: 1637, lat: 38.1, lng: 127.5, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-          troops: {attacker: {name: '청군', from: {lat: 37.7, lng: 127.3}, to: {lat: 38.1, lng: 127.5}, type: 'land'}} }
+        {
+            name: '병자호란', year: 1636, lat: 37.5, lng: 127.0, participants: ['조선', '청나라'], outcome: '청나라 승리',
+            troops: {
+                attacker: {
+                    name: '청군', from: { lat: 40.0, lng: 116.4 }, to: { lat: 37.5, lng: 127.0 }, type: 'land',
+                    waypoints: [
+                        { lat: 40.5, lng: 117.5 }, { lat: 40.8, lng: 118.5 }, { lat: 41.0, lng: 119.5 }, // 산해관 북쪽
+                        { lat: 41.3, lng: 121.0 }, { lat: 41.5, lng: 122.5 }, { lat: 41.4, lng: 123.8 }, // 요동반도 북부
+                        { lat: 41.0, lng: 124.6 }, { lat: 40.5, lng: 125.2 }, { lat: 40.0, lng: 125.5 }, // 요양→압록강
+                        { lat: 39.3, lng: 126.0 }, { lat: 38.5, lng: 126.5 }, { lat: 38.0, lng: 126.8 }  // 평안도→한성
+                    ]
+                }
+            }
+        },
+        {
+            name: '의주 전투', year: 1636, lat: 40.2, lng: 124.5, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
+            troops: { attacker: { name: '청군', from: { lat: 40.5, lng: 124.0 }, to: { lat: 40.2, lng: 124.5 }, type: 'land' } }
+        },
+        {
+            name: '정주성 전투', year: 1636, lat: 39.7, lng: 125.2, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
+            troops: { attacker: { name: '청군', from: { lat: 40.2, lng: 124.5 }, to: { lat: 39.7, lng: 125.2 }, type: 'land' } }
+        },
+        {
+            name: '안주성 전투', year: 1636, lat: 39.6, lng: 125.7, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
+            troops: { attacker: { name: '청군', from: { lat: 39.7, lng: 125.2 }, to: { lat: 39.6, lng: 125.7 }, type: 'land' } }
+        },
+        {
+            name: '평양성 전투', year: 1636, lat: 39.0, lng: 125.8, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
+            troops: { attacker: { name: '청군', from: { lat: 39.6, lng: 125.7 }, to: { lat: 39.0, lng: 125.8 }, type: 'land' } }
+        },
+        {
+            name: '황주 전투', year: 1637, lat: 38.6, lng: 125.8, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
+            troops: { attacker: { name: '청군', from: { lat: 39.0, lng: 125.8 }, to: { lat: 38.6, lng: 125.8 }, type: 'land' } }
+        },
+        {
+            name: '남한산성 포위전', year: 1637, lat: 37.48, lng: 127.18, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
+            troops: { attacker: { name: '청군', from: { lat: 37.5, lng: 127.0 }, to: { lat: 37.48, lng: 127.18 }, type: 'land' } }
+        },
+        {
+            name: '쌍령 전투', year: 1637, lat: 37.7, lng: 127.3, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
+            troops: { attacker: { name: '청군', from: { lat: 37.5, lng: 127.0 }, to: { lat: 37.7, lng: 127.3 }, type: 'land' } }
+        },
+        {
+            name: '김화 전투', year: 1637, lat: 38.1, lng: 127.5, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
+            troops: { attacker: { name: '청군', from: { lat: 37.7, lng: 127.3 }, to: { lat: 38.1, lng: 127.5 }, type: 'land' } }
+        }
     ],
     '1800_1900': [
         { name: '청일전쟁', year: 1894, lat: 37.9, lng: 124.7, participants: ['청나라', '일본'], outcome: '일본 승리' }
@@ -325,7 +397,7 @@ const seaRegions = {
 // 주어진 좌표가 바다인지 확인 (육지 공격 시 통과 불가)
 function isInSea(lat, lng, routeType = 'land') {
     if (routeType === 'sea') return false; // 해상 공격은 바다 통과 가능
-    
+
     for (const region of Object.values(seaRegions)) {
         if (lat >= region.minLat && lat <= region.maxLat &&
             lng >= region.minLng && lng <= region.maxLng) {
@@ -337,40 +409,40 @@ function isInSea(lat, lng, routeType = 'land') {
 
 // 간단한 pathfinding: 출발지→목적지 사이에 육지만 통과하는 경로 찾기
 function findLandPath(fromLat, fromLng, toLat, toLng) {
-    const path = [{lat: fromLat, lng: fromLng}];
+    const path = [{ lat: fromLat, lng: fromLng }];
     const resolution = 1.5; // 더 큰 간격으로 부드러운 경로
-    
+
     let currentLat = fromLat;
     let currentLng = fromLng;
     const maxSteps = 100; // 무한루프 방지
     let steps = 0;
-    
+
     while (steps < maxSteps) {
         steps++;
-        
+
         // 목적지에 가까워지면 종료
         const distToDest = Math.sqrt((toLat - currentLat) ** 2 + (toLng - currentLng) ** 2);
         if (distToDest < resolution) {
-            path.push({lat: toLat, lng: toLng});
+            path.push({ lat: toLat, lng: toLng });
             break;
         }
-        
+
         // 목적지 방향으로 이동할 벡터 계산
         const dirLat = (toLat - currentLat) / distToDest;
         const dirLng = (toLng - currentLng) / distToDest;
-        
+
         // 다음 위치 후보들 (직진 우선, 필요시에만 우회)
         const candidates = [
             // 직진 (목적지 방향으로)
-            {lat: currentLat + dirLat * resolution, lng: currentLng + dirLng * resolution, priority: 1},
+            { lat: currentLat + dirLat * resolution, lng: currentLng + dirLng * resolution, priority: 1 },
             // 약간 북쪽으로
-            {lat: currentLat + dirLat * resolution + 0.5, lng: currentLng + dirLng * resolution, priority: 2},
+            { lat: currentLat + dirLat * resolution + 0.5, lng: currentLng + dirLng * resolution, priority: 2 },
             // 약간 동쪽으로
-            {lat: currentLat + dirLat * resolution, lng: currentLng + dirLng * resolution + 0.5, priority: 2},
+            { lat: currentLat + dirLat * resolution, lng: currentLng + dirLng * resolution + 0.5, priority: 2 },
             // 북쪽 크게 우회
-            {lat: currentLat + resolution * 1.5, lng: currentLng + dirLng * resolution * 0.3, priority: 3}
+            { lat: currentLat + resolution * 1.5, lng: currentLng + dirLng * resolution * 0.3, priority: 3 }
         ];
-        
+
         // 육지인 경로 중 가장 우선순위 높은 것 선택
         let nextPoint = null;
         for (const candidate of candidates) {
@@ -379,17 +451,17 @@ function findLandPath(fromLat, fromLng, toLat, toLng) {
                 break;
             }
         }
-        
+
         // 모든 후보가 바다면 강제로 북쪽 우회
         if (!nextPoint) {
-            nextPoint = {lat: currentLat + resolution, lng: currentLng};
+            nextPoint = { lat: currentLat + resolution, lng: currentLng };
         }
-        
+
         currentLat = nextPoint.lat;
         currentLng = nextPoint.lng;
-        path.push({lat: currentLat, lng: currentLng});
+        path.push({ lat: currentLat, lng: currentLng });
     }
-    
+
     return path;
 }
 
@@ -399,14 +471,14 @@ function generateRoute(from, to, type = 'auto') {
     const fromLng = from.lng;
     const toLat = to.lat;
     const toLng = to.lng;
-    
+
     // 자동 판단: 해양 vs 육상
     if (type === 'auto') {
         // 경도 차이가 크지 않고 위도 차이가 큰 경우 (남북 이동) -> 육상 가능성 높음
         // 동해/서해를 넘는 경우 -> 해상
         const latDiff = Math.abs(toLat - fromLat);
         const lngDiff = Math.abs(toLng - fromLng);
-        
+
         // 일본 <-> 한반도 (해상)
         if ((fromLng > 128 && toLng < 128) || (fromLng < 128 && toLng > 128)) {
             type = 'sea';
@@ -421,38 +493,38 @@ function generateRoute(from, to, type = 'auto') {
             type = distance > 5 ? 'land' : 'sea';
         }
     }
-    
+
     // 경유지 자동 생성
     const waypoints = [];
     const segments = Math.max(2, Math.floor(Math.sqrt((toLat - fromLat) ** 2 + (toLng - fromLng) ** 2) / 2));
-    
+
     if (type === 'land') {
         // 육로: 중국 -> 한반도는 요동반도 경유 (황해를 피해감)
         if (fromLng < 120 && toLng > 123) {
             // 베이징/중국 내륙 -> 한반도 (북쪽 육로)
-            waypoints.push({lat: 40.5, lng: 119.5});  // 산해관
-            waypoints.push({lat: 41.0, lng: 121.5});  // 요동반도 북부
-            waypoints.push({lat: 41.2, lng: 123.5});  // 요양
-            waypoints.push({lat: 40.8, lng: 124.5});  // 압록강 접근
-            waypoints.push({lat: 40.0, lng: 124.8});  // 압록강
-            waypoints.push({lat: 39.0, lng: 125.5});  // 한반도 북부
-            waypoints.push({lat: 38.0, lng: 126.0});  // 평안도
+            waypoints.push({ lat: 40.5, lng: 119.5 });  // 산해관
+            waypoints.push({ lat: 41.0, lng: 121.5 });  // 요동반도 북부
+            waypoints.push({ lat: 41.2, lng: 123.5 });  // 요양
+            waypoints.push({ lat: 40.8, lng: 124.5 });  // 압록강 접근
+            waypoints.push({ lat: 40.0, lng: 124.8 });  // 압록강
+            waypoints.push({ lat: 39.0, lng: 125.5 });  // 한반도 북부
+            waypoints.push({ lat: 38.0, lng: 126.0 });  // 평안도
             if (toLat < 38) {
-                waypoints.push({lat: 37.5, lng: 126.5});  // 황해도
+                waypoints.push({ lat: 37.5, lng: 126.5 });  // 황해도
             }
         }
         // 한반도 내 이동 - 해안선 따라가기
         else if (fromLng > 125 && toLng > 125) {
             const latDiff = toLat - fromLat;
             const lngDiff = toLng - fromLng;
-            
+
             // 바다를 피해 내륙으로 경로 생성
             const steps = Math.ceil(Math.abs(latDiff) + Math.abs(lngDiff)) * 2;
             for (let i = 1; i < steps; i++) {
                 const ratio = i / steps;
                 let newLat = fromLat + latDiff * ratio;
                 let newLng = fromLng + lngDiff * ratio;
-                
+
                 // 바다면 내륙으로 이동 (경도를 약간 조정)
                 if (isInSea(newLat, newLng)) {
                     // 동해쪽이면 서쪽으로, 서해쪽이면 동쪽으로
@@ -462,7 +534,7 @@ function generateRoute(from, to, type = 'auto') {
                         newLng = 126.5;  // 서해 -> 내륙
                     }
                 }
-                waypoints.push({lat: newLat, lng: newLng});
+                waypoints.push({ lat: newLat, lng: newLng });
             }
         }
         // 기타 육로: 바다 체크하면서 경로 생성
@@ -472,7 +544,7 @@ function generateRoute(from, to, type = 'auto') {
                 const ratio = i / steps;
                 let newLat = fromLat + (toLat - fromLat) * ratio;
                 let newLng = fromLng + (toLng - fromLng) * ratio;
-                
+
                 // 직선 경로가 바다를 지나면 우회
                 if (isInSea(newLat, newLng)) {
                     // 황해를 지나는 경우 -> 북쪽 우회
@@ -489,7 +561,7 @@ function generateRoute(from, to, type = 'auto') {
                         newLat = 35.5;
                     }
                 }
-                waypoints.push({lat: newLat, lng: newLng});
+                waypoints.push({ lat: newLat, lng: newLng });
             }
         }
     } else {
@@ -502,58 +574,82 @@ function generateRoute(from, to, type = 'auto') {
             });
         }
     }
-    
+
     return { type, waypoints };
 }
 
 // 역사적 무역 데이터
 const tradeData = {
     '0_300': [
-        { name: '실크로드', route: '장안-중앙아시아', lat: 34.3, lng: 108.9, goods: ['비단', '도자기', '향료'], 
-          from: {name: '장안', lat: 34.3, lng: 108.9}, to: {name: '중앙아시아', lat: 40.0, lng: 65.0}, bidirectional: true }
+        {
+            name: '실크로드', route: '장안-중앙아시아', lat: 34.3, lng: 108.9, goods: ['비단', '도자기', '향료'],
+            from: { name: '장안', lat: 34.3, lng: 108.9 }, to: { name: '중앙아시아', lat: 40.0, lng: 65.0 }, bidirectional: true
+        }
     ],
     '300_500': [
-        { name: '낙랑무역', route: '낙랑-한반도', lat: 39.0, lng: 125.7, goods: ['철기', '직물', '칠기'],
-          from: {name: '낙랑', lat: 39.0, lng: 125.7}, to: {name: '한반도남부', lat: 36.0, lng: 127.5}, bidirectional: true }
+        {
+            name: '낙랑무역', route: '낙랑-한반도', lat: 39.0, lng: 125.7, goods: ['철기', '직물', '칠기'],
+            from: { name: '낙랑', lat: 39.0, lng: 125.7 }, to: { name: '한반도남부', lat: 36.0, lng: 127.5 }, bidirectional: true
+        }
     ],
     '500_700': [
-        { name: '신라-당 무역', route: '경주-당나라', lat: 35.8, lng: 129.2, goods: ['금', '은', '직물', '불상'],
-          from: {name: '경주', lat: 35.8, lng: 129.2}, to: {name: '장안', lat: 34.3, lng: 108.9}, bidirectional: true }
+        {
+            name: '신라-당 무역', route: '경주-당나라', lat: 35.8, lng: 129.2, goods: ['금', '은', '직물', '불상'],
+            from: { name: '경주', lat: 35.8, lng: 129.2 }, to: { name: '장안', lat: 34.3, lng: 108.9 }, bidirectional: true
+        }
     ],
     '700_900': [
-        { name: '장보고 해상무역', route: '완도-당-일본', lat: 34.3, lng: 126.7, goods: ['도자기', '차', '직물', '노예'],
-          from: {name: '완도', lat: 34.3, lng: 126.7}, to: {name: '당나라', lat: 34.3, lng: 108.9},
-          waypoints: [{name: '일본', lat: 35.0, lng: 135.7}], bidirectional: true }
+        {
+            name: '장보고 해상무역', route: '완도-당-일본', lat: 34.3, lng: 126.7, goods: ['도자기', '차', '직물', '노예'],
+            from: { name: '완도', lat: 34.3, lng: 126.7 }, to: { name: '당나라', lat: 34.3, lng: 108.9 },
+            waypoints: [{ name: '일본', lat: 35.0, lng: 135.7 }], bidirectional: true
+        }
     ],
     '900_1100': [
-        { name: '고려-송 무역', route: '개경-송나라', lat: 37.9, lng: 126.6, goods: ['인삼', '종이', '붓', '먹'],
-          from: {name: '개경', lat: 37.9, lng: 126.6}, to: {name: '송나라', lat: 30.3, lng: 120.2}, bidirectional: true }
+        {
+            name: '고려-송 무역', route: '개경-송나라', lat: 37.9, lng: 126.6, goods: ['인삼', '종이', '붓', '먹'],
+            from: { name: '개경', lat: 37.9, lng: 126.6 }, to: { name: '송나라', lat: 30.3, lng: 120.2 }, bidirectional: true
+        }
     ],
     '1100_1300': [
-        { name: '고려청자 수출', route: '벽란도-송원', lat: 37.7, lng: 126.7, goods: ['청자', '고려인삼', '나전칠기'],
-          from: {name: '벽란도', lat: 37.7, lng: 126.7}, to: {name: '송원', lat: 31.0, lng: 121.0}, bidirectional: false }
+        {
+            name: '고려청자 수출', route: '벽란도-송원', lat: 37.7, lng: 126.7, goods: ['청자', '고려인삼', '나전칠기'],
+            from: { name: '벽란도', lat: 37.7, lng: 126.7 }, to: { name: '송원', lat: 31.0, lng: 121.0 }, bidirectional: false
+        }
     ],
     '1300_1400': [
-        { name: '원-고려 무역', route: '개경-대도', lat: 37.9, lng: 126.6, goods: ['면직물', '화약', '금속활자'],
-          from: {name: '개경', lat: 37.9, lng: 126.6}, to: {name: '대도', lat: 39.9, lng: 116.4}, bidirectional: true }
+        {
+            name: '원-고려 무역', route: '개경-대도', lat: 37.9, lng: 126.6, goods: ['면직물', '화약', '금속활자'],
+            from: { name: '개경', lat: 37.9, lng: 126.6 }, to: { name: '대도', lat: 39.9, lng: 116.4 }, bidirectional: true
+        }
     ],
     '1400_1600': [
-        { name: '조선-명 조공무역', route: '한성-북경', lat: 37.57, lng: 126.98, goods: ['인삼', '종이', '말', '은'],
-          from: {name: '한성', lat: 37.57, lng: 126.98}, to: {name: '북경', lat: 39.9, lng: 116.4}, bidirectional: false }
+        {
+            name: '조선-명 조공무역', route: '한성-북경', lat: 37.57, lng: 126.98, goods: ['인삼', '종이', '말', '은'],
+            from: { name: '한성', lat: 37.57, lng: 126.98 }, to: { name: '북경', lat: 39.9, lng: 116.4 }, bidirectional: false
+        }
     ],
     '1600_1800': [
-        { name: '조선-청 무역', route: '한양-북경', lat: 37.57, lng: 126.98, goods: ['인삼', '종이', '직물'],
-          from: {name: '한양', lat: 37.57, lng: 126.98}, to: {name: '북경', lat: 39.9, lng: 116.4}, bidirectional: false },
-        { name: '남만무역', route: '나가사키-동남아', lat: 32.7, lng: 129.9, goods: ['은', '구리', '도자기'],
-          from: {name: '나가사키', lat: 32.7, lng: 129.9}, to: {name: '동남아', lat: 13.7, lng: 100.5}, bidirectional: true }
+        {
+            name: '조선-청 무역', route: '한양-북경', lat: 37.57, lng: 126.98, goods: ['인삼', '종이', '직물'],
+            from: { name: '한양', lat: 37.57, lng: 126.98 }, to: { name: '북경', lat: 39.9, lng: 116.4 }, bidirectional: false
+        },
+        {
+            name: '남만무역', route: '나가사키-동남아', lat: 32.7, lng: 129.9, goods: ['은', '구리', '도자기'],
+            from: { name: '나가사키', lat: 32.7, lng: 129.9 }, to: { name: '동남아', lat: 13.7, lng: 100.5 }, bidirectional: true
+        }
     ],
     '1800_1900': [
-        { name: '개항장 무역', route: '부산-일본', lat: 35.1, lng: 129.0, goods: ['쌀', '콩', '직물', '기계'],
-          from: {name: '부산', lat: 35.1, lng: 129.0}, to: {name: '나가사키', lat: 32.7, lng: 129.9}, bidirectional: true }
+        {
+            name: '개항장 무역', route: '부산-일본', lat: 35.1, lng: 129.0, goods: ['쌀', '콩', '직물', '기계'],
+            from: { name: '부산', lat: 35.1, lng: 129.0 }, to: { name: '나가사키', lat: 32.7, lng: 129.9 }, bidirectional: true
+        }
     ],
     '1900_1945': [
-        { name: '경부선 물류', route: '부산-서울', lat: 36.0, lng: 128.0, goods: ['쌀', '석탄', '철강'],
-          from: {name: '부산', lat: 35.1, lng: 129.0}, to: {name: '서울', lat: 37.57, lng: 126.98}, bidirectional: true }
+        {
+            name: '경부선 물류', route: '부산-서울', lat: 36.0, lng: 128.0, goods: ['쌀', '석탄', '철강'],
+            from: { name: '부산', lat: 35.1, lng: 129.0 }, to: { name: '서울', lat: 37.57, lng: 126.98 }, bidirectional: true
+        }
     ]
 };
 
@@ -628,7 +724,7 @@ function initMap() {
         // 그리기 전용 pane 생성 (z-index 높게 설정)
         map.createPane('drawPane');
         map.getPane('drawPane').style.zIndex = 650; // 기본 overlay pane(400)보다 높게
-        
+
         // 그리기 레이어 초기화
         drawnItems = new L.FeatureGroup({
             pane: 'drawPane'
@@ -640,13 +736,13 @@ function initMap() {
             const layer = e.layer;
             drawnItems.addLayer(layer);
             saveDrawings();
-            
+
             // 그리기 완료 후 현재 핸들러 비활성화
             if (currentDrawHandler) {
                 currentDrawHandler.disable();
                 currentDrawHandler = null;
             }
-            
+
             // 활성 버튼 표시 제거
             document.querySelectorAll('.draw-tool-btn').forEach(btn => btn.classList.remove('active'));
         });
@@ -666,9 +762,12 @@ function initMap() {
 
         // 역사 지도 데이터 로드
         loadHistoricalMap(currentYear);
-        
+
         // 수도 마커 표시
         updateCapitalMarkers(currentYear);
+
+        // 타임라인 초기화
+        initTimeline();
     } catch (error) {
         console.error('지도 초기화 오류:', error);
         // 지도 초기화 실패 시 기본 마커 표시
@@ -680,16 +779,16 @@ function initMap() {
 function loadHistoricalMap(year) {
     // 연도에 맞는 GeoJSON 파일 선택
     let geojsonFile = getGeojsonFileForYear(year);
-    
+
     // D3를 사용하여 GeoJSON 로드
     if (typeof d3 !== 'undefined') {
         d3.json(geojsonFile)
-            .then(function(data) {
+            .then(function (data) {
                 if (data) {
                     // 동아시아 영역만 필터링 (경도 70~150, 위도 15~60)
                     const filteredFeatures = data.features.filter(feature => {
                         if (!feature.geometry || !feature.geometry.coordinates) return false;
-                        
+
                         // 폴리곤의 중심점이 동아시아 범위 내에 있는지 확인
                         try {
                             let coords = feature.geometry.coordinates;
@@ -713,16 +812,16 @@ function loadHistoricalMap(year) {
                         }
                         return false;
                     });
-                    
+
                     // 필터링된 데이터로 새 GeoJSON 객체 생성
                     const filteredData = {
                         type: 'FeatureCollection',
                         features: filteredFeatures
                     };
-                    
+
                     // 새 레이어 생성 (아직 지도에 추가 안함)
                     const newLayer = L.geoJSON(filteredData, {
-                        style: function(feature) {
+                        style: function (feature) {
                             return {
                                 fillColor: getColorByCountry(feature.properties.NAME),
                                 weight: 1,
@@ -734,17 +833,17 @@ function loadHistoricalMap(year) {
                                 interactive: true  // 클릭 가능하게
                             };
                         },
-                        onEachFeature: function(feature, layer) {
+                        onEachFeature: function (feature, layer) {
                             if (feature.properties && (feature.properties.NAME || feature.properties.name)) {
                                 const countryName = feature.properties.NAME || feature.properties.name;
                                 const displayName = countryName === 'gojoseon' ? '고조선' : countryName;
-                                
+
                                 // 클릭 이벤트 - 맨 앞으로 가져오고 팝업 열기
-                                layer.on('click', function(e) {
+                                layer.on('click', function (e) {
                                     e.target.bringToFront();
                                     layer.openPopup();
                                 });
-                                
+
                                 layer.bindPopup(
                                     `<div style="font-family: sans-serif; padding: 8px;">
                                         <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #1f2937;">${displayName}</h3>
@@ -754,9 +853,9 @@ function loadHistoricalMap(year) {
                                         className: 'custom-popup'
                                     }
                                 );
-                                
+
                                 // 호버 효과
-                                layer.on('mouseover', function(e) {
+                                layer.on('mouseover', function (e) {
                                     e.target.setStyle({
                                         weight: 3,
                                         color: '#3b82f6',
@@ -764,8 +863,8 @@ function loadHistoricalMap(year) {
                                     });
                                     e.target.bringToFront();  // 마우스 오버시 맨 앞으로
                                 });
-                                
-                                layer.on('mouseout', function(e) {
+
+                                layer.on('mouseout', function (e) {
                                     if (newLayer) {
                                         newLayer.resetStyle(e.target);
                                     }
@@ -773,10 +872,10 @@ function loadHistoricalMap(year) {
                             }
                         }
                     });
-                    
+
                     // 페이드 효과를 위해 새 레이어 먼저 추가
                     newLayer.addTo(map);
-                    
+
                     // 기존 레이어가 있으면 즉시 제거 (깜빡임 최소화)
                     if (historicalLayer) {
                         try {
@@ -785,12 +884,12 @@ function loadHistoricalMap(year) {
                             console.log('레이어 제거 중 오류:', e);
                         }
                     }
-                    
+
                     // 새 레이어를 현재 레이어로 설정
                     historicalLayer = newLayer;
                 }
             })
-            .catch(function(error) {
+            .catch(function (error) {
                 console.log('GeoJSON 로드 중 오류:', error);
                 // 기본 마커 표시
                 addDefaultMarkers();
@@ -882,20 +981,20 @@ function getColorByCountry(name) {
         'Three Kingdoms': '#6366f1',
         'Gojoseon': '#7c3aed'
     };
-    
+
     // 이름에서 키워드 매칭
     for (let key in colors) {
         if (name && name.includes(key)) {
             return colors[key];
         }
     }
-    
+
     // 기본 색상 (파스텔 톤)
     const defaultColors = [
-        '#94a3b8', '#cbd5e1', '#a5b4fc', '#c4b5fd', 
+        '#94a3b8', '#cbd5e1', '#a5b4fc', '#c4b5fd',
         '#f9a8d4', '#fdba74', '#fcd34d', '#86efac'
     ];
-    
+
     // 이름 해시값으로 색상 선택
     let hash = 0;
     if (name) {
@@ -932,7 +1031,7 @@ function updateCapitalMarkers(year) {
     // 해당 시대 찾기
     let periodKey = getCapitalPeriod(year);
     let capitals = capitalData[periodKey];
-    
+
     if (!capitals) {
         // 데이터가 없으면 기존 마커만 제거
         if (capitalMarkers && capitalMarkers.length > 0) {
@@ -947,7 +1046,7 @@ function updateCapitalMarkers(year) {
         }
         return;
     }
-    
+
     // 새 마커 생성 (아직 지도에 추가 안함)
     const newMarkers = [];
     capitals.forEach(capital => {
@@ -966,7 +1065,7 @@ function updateCapitalMarkers(year) {
             iconSize: [120, 50],
             iconAnchor: [60, 25]
         });
-        
+
         const marker = L.marker([capital.lat, capital.lng], { icon: icon })
             .bindPopup(
                 `<div style="font-family: sans-serif; padding: 12px; min-width: 200px;">
@@ -979,13 +1078,13 @@ function updateCapitalMarkers(year) {
                     offset: [0, -20]
                 }
             );
-        
+
         newMarkers.push(marker);
     });
-    
+
     // 새 마커 먼저 추가
     newMarkers.forEach(marker => marker.addTo(map));
-    
+
     // 기존 마커 제거
     if (capitalMarkers && capitalMarkers.length > 0) {
         capitalMarkers.forEach(marker => {
@@ -996,7 +1095,7 @@ function updateCapitalMarkers(year) {
             }
         });
     }
-    
+
     // 새 마커를 현재 마커로 설정
     capitalMarkers = newMarkers;
 }
@@ -1028,15 +1127,15 @@ function toggleLayer(layerType) {
     const buttons = document.querySelectorAll('.layer-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-    
+
     // 현재 레이어 타입 업데이트
     currentLayerType = layerType;
-    
+
     // 기존 이벤트 마커 제거
     clearEventMarkers();
-    
+
     // 레이어 타입에 따라 마커 추가
-    switch(layerType) {
+    switch (layerType) {
         case 'default':
             // 기본 지도만 표시 (아무것도 추가 안 함)
             break;
@@ -1064,7 +1163,7 @@ function clearEventMarkers() {
         });
         eventMarkers = [];
     }
-    
+
     // 무역로 라인 제거
     if (tradeRoutes && tradeRoutes.length > 0) {
         tradeRoutes.forEach(route => {
@@ -1082,9 +1181,9 @@ function clearEventMarkers() {
 function showBattleMarkers(year) {
     const periodKey = getCapitalPeriod(year);
     const battles = battleData[periodKey];
-    
+
     if (!battles) return;
-    
+
     battles.forEach(battle => {
         // 전투 마커
         const icon = L.divIcon({
@@ -1098,7 +1197,7 @@ function showBattleMarkers(year) {
             iconSize: [100, 40],
             iconAnchor: [50, 20]
         });
-        
+
         const marker = L.marker([battle.lat, battle.lng], { icon: icon })
             .addTo(map)
             .bindPopup(
@@ -1113,27 +1212,27 @@ function showBattleMarkers(year) {
                     offset: [0, -15]
                 }
             );
-        
+
         eventMarkers.push(marker);
-        
+
         // 병사 진군 애니메이션 (troops 데이터가 있는 경우)
         if (battle.troops && battle.troops.attacker) {
             const troop = battle.troops.attacker;
-            
+
             // 경로 타입 확인
             const isLand = !troop.type || troop.type === 'land';
-            
+
             // 경로 구성
             let routePoints = [];
-            
+
             // waypoints가 있으면 기존 방식 사용 (더 자연스러움)
             if (troop.waypoints && troop.waypoints.length > 0) {
                 routePoints = [[troop.from.lat, troop.from.lng]];
-                
+
                 troop.waypoints.forEach(wp => {
                     routePoints.push([wp.lat, wp.lng]);
                 });
-                
+
                 routePoints.push([battle.lat, battle.lng]);
             } else if (isLand) {
                 // waypoints가 없는 육지 공격만 pathfinding 사용
@@ -1146,10 +1245,10 @@ function showBattleMarkers(year) {
                     [battle.lat, battle.lng]
                 ];
             }
-            
+
             // 경로 타입에 따른 색상 (육로: 빨강, 해상: 파랑)
             const routeColor = isLand ? '#ff0000' : '#0066ff';
-            
+
             // HoI4 스타일 굵은 공격 화살표
             // 외곽선 (검은색)
             const outlineColor = routeColor === '#ff0000' ? '#8b0000' : '#003366';
@@ -1160,7 +1259,7 @@ function showBattleMarkers(year) {
                 className: 'hoi4-attack-outline'
             }).addTo(map);
             eventMarkers.push(outlineLine);
-            
+
             // 메인 라인
             const marchLine = L.polyline(routePoints, {
                 color: routeColor,
@@ -1169,7 +1268,7 @@ function showBattleMarkers(year) {
                 className: 'hoi4-attack-arrow'
             }).addTo(map);
             eventMarkers.push(marchLine);
-            
+
             // 큰 화살표 데코레이터 (HoI4 스타일)
             if (typeof L.polylineDecorator !== 'undefined') {
                 // 외곽선 화살표 (검은색)
@@ -1181,9 +1280,9 @@ function showBattleMarkers(year) {
                             symbol: L.Symbol.arrowHead({
                                 pixelSize: 70,
                                 polygon: true,
-                                pathOptions: { 
-                                    stroke: true, 
-                                    color: '#000000', 
+                                pathOptions: {
+                                    stroke: true,
+                                    color: '#000000',
                                     fillColor: '#000000',
                                     fillOpacity: 0.4,
                                     weight: 6
@@ -1193,7 +1292,7 @@ function showBattleMarkers(year) {
                     ]
                 }).addTo(map);
                 eventMarkers.push(outlineDecorator);
-                
+
                 // 메인 화살표
                 const decorator = L.polylineDecorator(marchLine, {
                     patterns: [
@@ -1203,9 +1302,9 @@ function showBattleMarkers(year) {
                             symbol: L.Symbol.arrowHead({
                                 pixelSize: 65,
                                 polygon: true,
-                                pathOptions: { 
-                                    stroke: true, 
-                                    color: outlineColor, 
+                                pathOptions: {
+                                    stroke: true,
+                                    color: outlineColor,
                                     fillColor: routeColor,
                                     fillOpacity: 0.95,
                                     weight: 6
@@ -1216,7 +1315,7 @@ function showBattleMarkers(year) {
                 }).addTo(map);
                 eventMarkers.push(decorator);
             }
-            
+
             // 병사 아이콘 (육로: 검, 해상: 배)
             const troopIcon = isLand ? '⚔️' : '⛵';
             const soldierIcon = L.divIcon({
@@ -1225,19 +1324,19 @@ function showBattleMarkers(year) {
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
             });
-            
+
             const soldierMarker = L.marker([troop.from.lat, troop.from.lng], { icon: soldierIcon })
                 .addTo(map);
             eventMarkers.push(soldierMarker);
-            
+
             // 병사 진군 애니메이션
             let currentSegment = 0;
             let progress = 0;
             const animationSpeed = 0.004;
-            
+
             function animateSoldier() {
                 progress += animationSpeed;
-                
+
                 if (progress >= 1) {
                     currentSegment++;
                     if (currentSegment >= routePoints.length - 1) {
@@ -1251,19 +1350,19 @@ function showBattleMarkers(year) {
                     }
                     progress = 0;
                 }
-                
+
                 const startPoint = routePoints[currentSegment];
                 const endPoint = routePoints[currentSegment + 1];
                 const lat = startPoint[0] + (endPoint[0] - startPoint[0]) * progress;
                 const lng = startPoint[1] + (endPoint[1] - startPoint[1]) * progress;
-                
+
                 soldierMarker.setLatLng([lat, lng]);
-                
+
                 requestAnimationFrame(animateSoldier);
             }
-            
+
             animateSoldier();
-            
+
             // 출발지 마커
             const fromIcon = L.divIcon({
                 className: 'battle-point-marker',
@@ -1271,14 +1370,14 @@ function showBattleMarkers(year) {
                 iconSize: [30, 30],
                 iconAnchor: [15, 15]
             });
-            
+
             const fromMarker = L.marker([troop.from.lat, troop.from.lng], { icon: fromIcon })
                 .addTo(map)
                 .bindPopup(`<div style="font-family: sans-serif; padding: 8px;">
                     <strong>${troop.name}</strong><br>
                     <span style="color: ${isLand ? '#dc2626' : '#0066ff'};">${isLand ? '육로' : '해상'} 진군 시작</span>
                 </div>`);
-            
+
             eventMarkers.push(fromMarker);
         }
     });
@@ -1288,25 +1387,25 @@ function showBattleMarkers(year) {
 function showTradeMarkers(year) {
     const periodKey = getCapitalPeriod(year);
     const trades = tradeData[periodKey];
-    
+
     if (!trades) return;
-    
+
     trades.forEach(trade => {
         // 무역로 라인 그리기
         if (trade.from && trade.to) {
             let routePoints = [
                 [trade.from.lat, trade.from.lng]
             ];
-            
+
             // 경유지가 있으면 추가
             if (trade.waypoints && trade.waypoints.length > 0) {
                 trade.waypoints.forEach(wp => {
                     routePoints.push([wp.lat, wp.lng]);
                 });
             }
-            
+
             routePoints.push([trade.to.lat, trade.to.lng]);
-            
+
             // 곡선 경로 생성 (베지어 곡선 효과)
             const polyline = L.polyline(routePoints, {
                 color: '#3b82f6',
@@ -1315,7 +1414,7 @@ function showTradeMarkers(year) {
                 dashArray: '10, 10',
                 className: 'trade-route-line'
             }).addTo(map);
-            
+
             // 화살표 데코레이터 추가 (라이브러리가 로드된 경우)
             if (typeof L.polylineDecorator !== 'undefined') {
                 const decorator = L.polylineDecorator(polyline, {
@@ -1336,12 +1435,12 @@ function showTradeMarkers(year) {
                         }
                     ]
                 }).addTo(map);
-                
+
                 tradeRoutes.push(decorator);
             }
-            
+
             tradeRoutes.push(polyline);
-            
+
             // 배 애니메이션 마커 추가
             const shipIcon = L.divIcon({
                 className: 'ship-marker',
@@ -1349,29 +1448,29 @@ function showTradeMarkers(year) {
                 iconSize: [50, 50],
                 iconAnchor: [25, 25]
             });
-            
+
             const shipMarker = L.marker(routePoints[0], { icon: shipIcon }).addTo(map);
             eventMarkers.push(shipMarker);
-            
+
             // 배 애니메이션 함수
             let currentPointIndex = 0;
             let progress = 0;
             const animationSpeed = 0.005; // 속도 조절
             let direction = 1; // 1: 정방향, -1: 역방향
-            
+
             function animateShip() {
                 const isBidirectional = trade.bidirectional !== false; // 기본값 true
-                
+
                 // 안전 체크
                 if (currentPointIndex < 0) currentPointIndex = 0;
                 if (currentPointIndex >= routePoints.length - 1) currentPointIndex = routePoints.length - 2;
-                
+
                 const startPoint = routePoints[currentPointIndex];
                 const endPoint = routePoints[currentPointIndex + 1];
-                
+
                 // 진행률 업데이트
                 progress += animationSpeed * direction;
-                
+
                 // 구간 전환 및 방향 전환
                 if (direction === 1 && progress >= 1) {
                     if (currentPointIndex < routePoints.length - 2) {
@@ -1401,19 +1500,19 @@ function showTradeMarkers(year) {
                         progress = 0;
                     }
                 }
-                
+
                 // 현재 위치 계산 (선형 보간)
                 const lat = startPoint[0] + (endPoint[0] - startPoint[0]) * progress;
                 const lng = startPoint[1] + (endPoint[1] - startPoint[1]) * progress;
-                
+
                 shipMarker.setLatLng([lat, lng]);
-                
+
                 requestAnimationFrame(animateShip);
             }
-            
+
             // 애니메이션 시작
             animateShip();
-            
+
             // 출발지 마커
             const fromIcon = L.divIcon({
                 className: 'trade-point-marker',
@@ -1421,16 +1520,16 @@ function showTradeMarkers(year) {
                 iconSize: [30, 30],
                 iconAnchor: [15, 15]
             });
-            
+
             const fromMarker = L.marker([trade.from.lat, trade.from.lng], { icon: fromIcon })
                 .addTo(map)
                 .bindPopup(`<div style="font-family: sans-serif; padding: 8px;">
                     <strong>${trade.from.name}</strong><br>
                     <span style="color: #3b82f6;">출발지</span>
                 </div>`);
-            
+
             eventMarkers.push(fromMarker);
-            
+
             // 도착지 마커
             const toIcon = L.divIcon({
                 className: 'trade-point-marker',
@@ -1438,17 +1537,17 @@ function showTradeMarkers(year) {
                 iconSize: [30, 30],
                 iconAnchor: [15, 15]
             });
-            
+
             const toMarker = L.marker([trade.to.lat, trade.to.lng], { icon: toIcon })
                 .addTo(map)
                 .bindPopup(`<div style="font-family: sans-serif; padding: 8px;">
                     <strong>${trade.to.name}</strong><br>
                     <span style="color: #3b82f6;">도착지</span>
                 </div>`);
-            
+
             eventMarkers.push(toMarker);
         }
-        
+
         // 중앙 무역 정보 마커
         const icon = L.divIcon({
             className: 'trade-marker',
@@ -1461,7 +1560,7 @@ function showTradeMarkers(year) {
             iconSize: [100, 40],
             iconAnchor: [50, 20]
         });
-        
+
         const marker = L.marker([trade.lat, trade.lng], { icon: icon })
             .addTo(map)
             .bindPopup(
@@ -1476,7 +1575,7 @@ function showTradeMarkers(year) {
                     offset: [0, -15]
                 }
             );
-        
+
         eventMarkers.push(marker);
     });
 }
@@ -1485,9 +1584,9 @@ function showTradeMarkers(year) {
 function showPeopleMarkers(year) {
     const periodKey = getCapitalPeriod(year);
     const people = peopleData[periodKey];
-    
+
     if (!people) return;
-    
+
     people.forEach(person => {
         const icon = L.divIcon({
             className: 'people-marker',
@@ -1500,7 +1599,7 @@ function showPeopleMarkers(year) {
             iconSize: [100, 40],
             iconAnchor: [50, 20]
         });
-        
+
         const marker = L.marker([person.lat, person.lng], { icon: icon })
             .addTo(map)
             .bindPopup(
@@ -1515,7 +1614,7 @@ function showPeopleMarkers(year) {
                     offset: [0, -15]
                 }
             );
-        
+
         eventMarkers.push(marker);
     });
 }
@@ -1527,7 +1626,7 @@ function showScreen(screenId) {
     // 모든 화면 숨기기
     const screens = document.querySelectorAll('.screen');
     screens.forEach(screen => screen.classList.remove('active'));
-    
+
     // 선택된 화면 표시
     const targetScreen = document.getElementById(screenId);
     if (targetScreen) {
@@ -1542,7 +1641,7 @@ function showScreen(screenId) {
 function openPanel(panelId) {
     // 다른 패널 모두 닫기
     closeAllPanels();
-    
+
     // 채팅 패널을 직접 열 때는 인물 대화 모드 해제 (일반 AI)
     if (panelId === 'panel-chat') {
         currentCharacter = null;
@@ -1561,12 +1660,12 @@ function openPanel(panelId) {
             messagesContainer.appendChild(greetingMessage);
         }
     }
-    
+
     // 선택된 패널 열기
     const panel = document.getElementById(panelId);
     const overlay = document.getElementById('panel-overlay');
     const timeline = document.querySelector('.timeline-control');
-    
+
     if (panel) {
         panel.classList.add('open');
     }
@@ -1582,16 +1681,16 @@ function closePanel(panelId) {
     const panel = document.getElementById(panelId);
     const overlay = document.getElementById('panel-overlay');
     const timeline = document.querySelector('.timeline-control');
-    
+
     // 인물 채팅 패널을 닫을 때 인물 대화 모드 해제
     if (panelId === 'panel-character-chat') {
         currentCharacter = null;
     }
-    
+
     if (panel) {
         panel.classList.remove('open');
     }
-    
+
     // 모든 패널이 닫혔는지 확인
     const openPanels = document.querySelectorAll('.side-panel.open');
     if (openPanels.length === 0) {
@@ -1608,7 +1707,7 @@ function closeAllPanels() {
     const panels = document.querySelectorAll('.side-panel');
     const overlay = document.getElementById('panel-overlay');
     const timeline = document.querySelector('.timeline-control');
-    
+
     panels.forEach(panel => panel.classList.remove('open'));
     if (overlay) {
         overlay.classList.remove('active');
@@ -1624,7 +1723,7 @@ function closeAllPanels() {
 function toggleMenu() {
     const sideMenu = document.getElementById('side-menu');
     const overlay = document.getElementById('menu-overlay');
-    
+
     if (sideMenu && overlay) {
         sideMenu.classList.toggle('open');
         overlay.classList.toggle('active');
@@ -1638,11 +1737,11 @@ function updateYear(year) {
     currentYear = parseInt(year);
     const eraTitle = document.getElementById('era-title');
     const eraYear = document.getElementById('era-year');
-    
+
     if (eraYear) {
         eraYear.textContent = year > 0 ? `${year}년` : `BC ${Math.abs(year)}년`;
     }
-    
+
     // 시대 구분 (정확한 역사 시기)
     if (year < -108) {
         currentEra = '고조선'; // BC 2333 ~ BC 108
@@ -1663,20 +1762,35 @@ function updateYear(year) {
     } else {
         currentEra = '현대'; // 1945 ~
     }
-    
+
     if (eraTitle) {
         eraTitle.textContent = currentEra;
     }
+
+    // 시대 경계 체크 (자동 재생 중 시대 전환)
+    const era = ERAS[currentEraIndex];
+    if (year > era.end && currentEraIndex < ERAS.length - 1) {
+        // 현재 시대를 넘어섬 -> 다음 시대로
+        switchToEra(currentEraIndex + 1);
+        return;
+    } else if (year < era.start && currentEraIndex > 0) {
+        // 현재 시대 이전 -> 이전 시대로
+        switchToEra(currentEraIndex - 1);
+        return;
+    }
+
+    // 타임라인 핸들 업데이트
+    updateTimelineHandle(currentYear);
 
     // 지도 업데이트
     if (map) {
         loadHistoricalMap(currentYear);
         updateCapitalMarkers(currentYear);
-        
+
         // 현재 활성화된 레이어 다시 표시
         if (currentLayerType !== 'default') {
             clearEventMarkers();
-            switch(currentLayerType) {
+            switch (currentLayerType) {
                 case 'battles':
                     showBattleMarkers(currentYear);
                     break;
@@ -1692,25 +1806,17 @@ function updateYear(year) {
 }
 
 function previousYear() {
-    const slider = document.getElementById('year-slider');
-    if (slider) {
-        slider.value = parseInt(slider.value) - 10;
-        updateYear(slider.value);
-    }
+    updateYear(currentYear - 10);
 }
 
 function nextYear() {
-    const slider = document.getElementById('year-slider');
-    if (slider) {
-        slider.value = parseInt(slider.value) + 10;
-        updateYear(slider.value);
-    }
+    updateYear(currentYear + 10);
 }
 
 // 자동 재생/정지 토글
 function toggleAutoPlay() {
     const btn = document.getElementById('play-pause-btn');
-    
+
     if (isAutoPlaying) {
         // 정지
         stopAutoPlay();
@@ -1727,24 +1833,19 @@ function toggleAutoPlay() {
 // 자동 재생 시작
 function startAutoPlay() {
     isAutoPlaying = true;
-    
+
     // 속도에 따른 인터벌 계산 (기본 500ms)
     const baseInterval = 500;
     const interval = baseInterval / playbackSpeed;
-    
+
     autoPlayInterval = setInterval(() => {
-        const slider = document.getElementById('year-slider');
-        if (slider) {
-            const newYear = parseInt(slider.value) + 1;
-            
-            // 최대값에 도달하면 처음으로
-            if (newYear > parseInt(slider.max)) {
-                slider.value = slider.min;
-            } else {
-                slider.value = newYear;
-            }
-            
-            updateYear(slider.value);
+        const newYear = currentYear + 1;
+
+        // 최대값에 도달하면 처음으로
+        if (newYear > MAX_YEAR) {
+            updateYear(MIN_YEAR);
+        } else {
+            updateYear(newYear);
         }
     }, interval);
 }
@@ -1752,7 +1853,7 @@ function startAutoPlay() {
 // 자동 재생 정지
 function stopAutoPlay() {
     isAutoPlaying = false;
-    
+
     if (autoPlayInterval) {
         clearInterval(autoPlayInterval);
         autoPlayInterval = null;
@@ -1765,12 +1866,12 @@ function changePlaybackSpeed() {
     const currentIndex = speeds.indexOf(playbackSpeed);
     const nextIndex = (currentIndex + 1) % speeds.length;
     playbackSpeed = speeds[nextIndex];
-    
+
     const speedBtn = document.getElementById('speed-btn');
     if (speedBtn) {
         speedBtn.textContent = playbackSpeed + 'x';
     }
-    
+
     // 재생 중이면 재시작
     if (isAutoPlaying) {
         stopAutoPlay();
@@ -1790,12 +1891,12 @@ function loadChapter(chapterNum) {
     // 모든 챕터 아이템에서 active 제거
     const chapters = document.querySelectorAll('.chapter-item');
     chapters.forEach(ch => ch.classList.remove('active'));
-    
+
     // 선택된 챕터에 active 추가
     if (chapters[chapterNum - 1]) {
         chapters[chapterNum - 1].classList.add('active');
     }
-    
+
     // 실제로는 여기서 해당 챕터의 내용을 로드
     console.log(`챕터 ${chapterNum} 로드`);
 }
@@ -1810,7 +1911,7 @@ function filterCharacters(era) {
     if (event && event.target) {
         event.target.classList.add('active');
     }
-    
+
     // 캐릭터 카드 필터링
     const cards = document.querySelectorAll('.character-card');
     cards.forEach(card => {
@@ -1830,23 +1931,23 @@ function selectCharacter(name) {
 function openCharacterChat(name) {
     // 현재 선택된 인물 저장
     currentCharacter = name;
-    
+
     const chatTitle = document.getElementById('character-chat-title');
     if (chatTitle) {
         chatTitle.textContent = `💬 ${name}과(와)의 대화`;
     }
-    
+
     // 채팅 기록 초기화하고 인사말 추가
     const messagesContainer = document.getElementById('character-chat-messages');
     if (messagesContainer) {
         messagesContainer.innerHTML = '';
-        
+
         // 인물의 인사말 추가
         const greetingMessage = document.createElement('div');
         greetingMessage.className = 'message character-message';
-        
+
         let greeting = '';
-        switch(name) {
+        switch (name) {
             case '광개토대왕':
                 greeting = '과인은 고구려의 광개토대왕이다. 동아시아를 호령한 경험을 후대에 전하고자 하니, 무엇이 궁금한가?';
                 break;
@@ -1886,7 +1987,7 @@ function openCharacterChat(name) {
             default:
                 greeting = `${name}과(와)의 대화를 시작합니다.`;
         }
-        
+
         greetingMessage.innerHTML = `
             <div class="message-bubble">
                 <p>${greeting}</p>
@@ -1896,7 +1997,7 @@ function openCharacterChat(name) {
         `;
         messagesContainer.appendChild(greetingMessage);
     }
-    
+
     // 인물 패널 닫고 인물 채팅 패널 열기
     closePanel('panel-characters');
     openPanel('panel-character-chat');
@@ -1906,11 +2007,11 @@ function openCharacterChat(name) {
 async function sendCharacterMessage() {
     const input = document.getElementById('character-chat-input');
     const messagesContainer = document.getElementById('character-chat-messages');
-    
+
     if (!input || !messagesContainer || !input.value.trim()) return;
-    
+
     const messageText = input.value.trim();
-    
+
     // 사용자 메시지 추가
     const userMessage = document.createElement('div');
     userMessage.className = 'message user-message';
@@ -1921,13 +2022,13 @@ async function sendCharacterMessage() {
         <span class="message-time">${getCurrentTime()}</span>
     `;
     messagesContainer.appendChild(userMessage);
-    
+
     // 입력 필드 초기화
     input.value = '';
-    
+
     // 스크롤 하단으로
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
+
     // AI 응답 생성 (인물 캐릭터)
     await getCharacterAIResponse(messageText, messagesContainer);
 }
@@ -1949,11 +2050,11 @@ async function getCharacterAIResponse(query, messagesContainer) {
     try {
         let response = '';
         const config = appConfig.getConfig();
-        
+
         if (config.enabled && config.provider === 'openai' && config.apiKey && currentCharacter && characterProfiles[currentCharacter]) {
             // 인물 캐릭터 프롬프트 사용
             const systemPrompt = characterProfiles[currentCharacter].prompt;
-            
+
             // OpenAI API 호출
             const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -2007,7 +2108,7 @@ async function getCharacterAIResponse(query, messagesContainer) {
 
     } catch (error) {
         console.error('AI 응답 생성 실패:', error);
-        
+
         // 로딩 메시지 제거
         loadingMessage.remove();
 
@@ -2035,8 +2136,8 @@ function askCharacterQuestion(question) {
 }
 
 function selectDebateSide(side) {
-    const message = side === 'agree' 
-        ? '진정한 통일이라는 의견에 동의하셨습니다.' 
+    const message = side === 'agree'
+        ? '진정한 통일이라는 의견에 동의하셨습니다.'
         : '불완전한 통일이라는 의견에 동의하셨습니다.';
     alert(message + '\n\n의견 작성 기능은 추후 업데이트 예정입니다.');
 }
@@ -2045,24 +2146,24 @@ function selectOption(button, optionNum) {
     // 모든 옵션에서 selected 제거
     const options = document.querySelectorAll('.option-btn');
     options.forEach(opt => opt.classList.remove('selected'));
-    
+
     // 선택된 옵션에 selected 추가
     button.classList.add('selected');
 }
 
 function submitAnswer(correctAnswer) {
     const selected = document.querySelector('.option-btn.selected');
-    
+
     if (!selected) {
         alert('답을 선택해주세요!');
         return;
     }
-    
+
     // 정답 해설 표시
     const explanation = document.getElementById('answer-explanation');
     if (explanation) {
         explanation.style.display = 'block';
-        
+
         // 스크롤 이동
         explanation.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -2070,13 +2171,13 @@ function submitAnswer(correctAnswer) {
 
 function nextQuestion() {
     alert('다음 문제 기능은 개발 중입니다.');
-    
+
     // 정답 해설 숨기기
     const explanation = document.getElementById('answer-explanation');
     if (explanation) {
         explanation.style.display = 'none';
     }
-    
+
     // 선택 초기화
     const options = document.querySelectorAll('.option-btn');
     options.forEach(opt => opt.classList.remove('selected'));
@@ -2096,11 +2197,11 @@ function startQuiz() {
 async function sendMessage() {
     const input = document.getElementById('chat-input');
     const messagesContainer = document.getElementById('chat-messages');
-    
+
     if (!input || !messagesContainer || !input.value.trim()) return;
-    
+
     const messageText = input.value.trim();
-    
+
     // 사용자 메시지 추가
     const userMessage = document.createElement('div');
     userMessage.className = 'message user-message';
@@ -2111,58 +2212,58 @@ async function sendMessage() {
         <span class="message-time">${getCurrentTime()}</span>
     `;
     messagesContainer.appendChild(userMessage);
-    
+
     // 입력 필드 초기화
     input.value = '';
-    
+
     // 스크롤 하단으로
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
+
     // 명령어 파싱
     const lowerMsg = messageText.toLowerCase();
-    
+
     // 특정 사건 위치 질문 ("612년 살수대첩 어디야?", "임진왜란 어디?")
     if (lowerMsg.includes('어디') || lowerMsg.includes('위치')) {
         await findAndShowEvent(messageText, messagesContainer);
         return;
     }
-    
+
     // 다중 사건 표시 ("고구려 전투들 다 보여줘", "조선시대 전투 보여줘")
-    if (lowerMsg.includes('다 보여') || lowerMsg.includes('전부 보여') || lowerMsg.includes('모두 보여') || 
+    if (lowerMsg.includes('다 보여') || lowerMsg.includes('전부 보여') || lowerMsg.includes('모두 보여') ||
         (lowerMsg.includes('보여') && (lowerMsg.includes('전투') || lowerMsg.includes('무역') || lowerMsg.includes('인물')))) {
         await showMultipleEvents(messageText, messagesContainer);
         return;
     }
-    
+
     // 사건 추가 명령어
     if (lowerMsg.includes('추가') || lowerMsg.includes('등록') || lowerMsg.includes('입력')) {
         addEventWithAI(messageText);
         return;
     }
-    
+
     // 검색 명령어
     if (lowerMsg.includes('검색') || lowerMsg.includes('찾아')) {
         const query = messageText.replace(/검색|찾아|에|서/g, '').trim();
         smartSearchInChat(query);
         return;
     }
-    
+
     // 특정 역사 사건명 감지 (명확한 사건 키워드만)
     // "지도자", "왕", "정책", "업적" 같은 일반 질문 키워드는 제외
-    const isGeneralQuestion = lowerMsg.includes('지도자') || lowerMsg.includes('누구') || 
-                              lowerMsg.includes('왕') || lowerMsg.includes('정책') || 
-                              lowerMsg.includes('업적') || lowerMsg.includes('무엇') ||
-                              lowerMsg.includes('어떻게') || lowerMsg.includes('왜') ||
-                              lowerMsg.includes('이유') || lowerMsg.includes('배경');
-    
+    const isGeneralQuestion = lowerMsg.includes('지도자') || lowerMsg.includes('누구') ||
+        lowerMsg.includes('왕') || lowerMsg.includes('정책') ||
+        lowerMsg.includes('업적') || lowerMsg.includes('무엇') ||
+        lowerMsg.includes('어떻게') || lowerMsg.includes('왜') ||
+        lowerMsg.includes('이유') || lowerMsg.includes('배경');
+
     if (!isGeneralQuestion && (
-        lowerMsg.includes('전투') || lowerMsg.includes('전쟁') || lowerMsg.includes('대첩') || 
+        lowerMsg.includes('전투') || lowerMsg.includes('전쟁') || lowerMsg.includes('대첩') ||
         lowerMsg.includes('의병') || lowerMsg.includes('봉기') || lowerMsg.includes('혁명'))) {
         // 특정 사건명이 있을 때만 지도 검색
         await findAndShowEvent(messageText, messagesContainer);
         return;
     }
-    
+
     // AI 응답 생성 (일반 질문)
     await getAIResponse(messageText, messagesContainer);
 }
@@ -2183,10 +2284,10 @@ async function getAIResponse(query, messagesContainer) {
 
     try {
         let response = '';
-        
+
         // Config 객체에서 설정 가져오기
         const config = appConfig.getConfig();
-        
+
         if (config.enabled && config.provider === 'openai' && config.apiKey && config.apiKey !== 'YOUR_OPENAI_API_KEY_HERE') {
             // 일반 역사 전문가 프롬프트 사용
             const systemPrompt = `당신은 한국 역사 전문가입니다. 사용자의 역사 질문에 대해 정확하고 간결하게 답변해주세요. 
@@ -2197,7 +2298,7 @@ async function getAIResponse(query, messagesContainer) {
 3. 안시성 전투(645년)는 양만춘 장군이 당 태종의 침입을 막은 전투
 4. 강감찬 장군은 귀주대첩(1019년)의 영웅
 5. 불확실한 정보는 추측하지 말 것`;
-            
+
             // OpenAI API 호출
             const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -2268,7 +2369,7 @@ async function getAIResponse(query, messagesContainer) {
 
     } catch (error) {
         console.error('AI 응답 생성 실패:', error);
-        
+
         // 로딩 메시지 제거
         loadingMessage.remove();
 
@@ -2296,7 +2397,7 @@ function askQuestion(question) {
 
 function speakMessage(button) {
     const messageText = button.parentElement.querySelector('p').textContent;
-    
+
     // Web Speech API 사용 (지원하는 브라우저에서)
     if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(messageText);
@@ -2322,7 +2423,7 @@ function getCurrentTime() {
 function selectDebateSide(side) {
     // 토론 채팅 화면으로 이동
     showScreen('screen-debate-chat');
-    
+
     // 타이머 시작
     startDebateTimer();
 }
@@ -2331,22 +2432,22 @@ function startDebateTimer() {
     if (debateInterval) {
         clearInterval(debateInterval);
     }
-    
+
     debateTimer = 600; // 10분
-    
+
     debateInterval = setInterval(() => {
         debateTimer--;
-        
+
         const minutes = Math.floor(debateTimer / 60);
         const seconds = debateTimer % 60;
         const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
+
         // 타이머 표시 업데이트
         const timerDisplays = document.querySelectorAll('.timer-display, .timer-display-small');
         timerDisplays.forEach(display => {
             display.textContent = timeString;
         });
-        
+
         if (debateTimer <= 0) {
             clearInterval(debateInterval);
             alert('토론 시간이 종료되었습니다!');
@@ -2360,11 +2461,11 @@ function startDebateTimer() {
 function sendDebateMessage() {
     const input = document.getElementById('debate-input');
     const agreeMessages = document.getElementById('agree-messages');
-    
+
     if (!input || !agreeMessages || !input.value.trim()) return;
-    
+
     const messageText = input.value.trim();
-    
+
     // 새 메시지 추가
     const newMessage = document.createElement('div');
     newMessage.className = 'debate-message';
@@ -2385,10 +2486,10 @@ function sendDebateMessage() {
             </button>
         </div>
     `;
-    
+
     agreeMessages.appendChild(newMessage);
     input.value = '';
-    
+
     // 스크롤 하단으로
     agreeMessages.scrollTop = agreeMessages.scrollHeight;
 }
@@ -2412,24 +2513,24 @@ function selectOption(button, optionNum) {
     // 모든 옵션에서 selected 제거
     const options = button.parentElement.querySelectorAll('.option-btn');
     options.forEach(opt => opt.classList.remove('selected'));
-    
+
     // 선택된 옵션에 selected 추가
     button.classList.add('selected');
 }
 
 function submitAnswer(correctAnswer) {
     const selected = document.querySelector('.option-btn.selected');
-    
+
     if (!selected) {
         alert('답을 선택해주세요!');
         return;
     }
-    
+
     // 정답 해설 표시
     const explanation = document.getElementById('answer-explanation');
     if (explanation) {
         explanation.style.display = 'block';
-        
+
         // 스크롤 이동
         explanation.scrollIntoView({ behavior: 'smooth' });
     }
@@ -2438,13 +2539,13 @@ function submitAnswer(correctAnswer) {
 function nextQuestion() {
     // 다음 문제로 이동 (실제로는 문제 데이터를 로드)
     alert('다음 문제를 로드합니다.');
-    
+
     // 정답 해설 숨기기
     const explanation = document.getElementById('answer-explanation');
     if (explanation) {
         explanation.style.display = 'none';
     }
-    
+
     // 선택 초기화
     const options = document.querySelectorAll('.option-btn');
     options.forEach(opt => opt.classList.remove('selected'));
@@ -2458,11 +2559,11 @@ function switchTab(tabName) {
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-    
+
     // 탭 컨텐츠 표시
     const tabContents = document.querySelectorAll('.tab-content');
     tabContents.forEach(content => content.classList.remove('active'));
-    
+
     const targetTab = document.getElementById(`tab-${tabName}`);
     if (targetTab) {
         targetTab.classList.add('active');
@@ -2510,16 +2611,16 @@ async function parseHistoricalEventWithAI(userInput) {
     if (!config.enabled) {
         return null;
     }
-    
+
     try {
         let response;
-        
+
         if (config.provider === 'openai') {
             response = await parseWithOpenAI(userInput);
         } else if (config.provider === 'ollama') {
             response = await parseWithOllama(userInput);
         }
-        
+
         return response;
     } catch (error) {
         console.error('AI 파싱 오류:', error);
@@ -2534,7 +2635,7 @@ async function parseWithOpenAI(userInput) {
         alert('OpenAI API 키를 설정해주세요.');
         return null;
     }
-    
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -2570,7 +2671,7 @@ async function parseWithOpenAI(userInput) {
             temperature: 0.3
         })
     });
-    
+
     const data = await response.json();
     return JSON.parse(data.choices[0].message.content);
 }
@@ -2605,7 +2706,7 @@ JSON만 출력:`,
             format: 'json'
         })
     });
-    
+
     const data = await response.json();
     return JSON.parse(data.response);
 }
@@ -2616,7 +2717,7 @@ async function addEventWithAI(userInput, messagesContainer) {
     if (!messagesContainer) {
         messagesContainer = document.getElementById('chat-messages');
     }
-    
+
     // 로딩 표시
     const loadingMsg = document.createElement('div');
     loadingMsg.className = 'message character-message';
@@ -2628,23 +2729,23 @@ async function addEventWithAI(userInput, messagesContainer) {
     `;
     messagesContainer.appendChild(loadingMsg);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
+
     try {
         const event = await parseHistoricalEventWithAI(userInput);
-        
+
         // 로딩 메시지 제거
         loadingMsg.remove();
-        
+
         if (!event) {
             const config = appConfig.getConfig();
             const errorMsg = document.createElement('div');
             errorMsg.className = 'message character-message';
-            
+
             let helpText = '';
             if (!config.enabled || !config.apiKey) {
                 helpText = '<br><br><span style="color: #ef4444;">💡 AI 기능을 사용하려면 API 키를 설정해주세요.</span><br><small>콘솔: appConfig.setApiKey("your-key")</small>';
             }
-            
+
             errorMsg.innerHTML = `
                 <div class="message-bubble">
                     <p>죄송합니다. 해당 정보를 찾을 수 없습니다.${helpText}</p>
@@ -2654,21 +2755,21 @@ async function addEventWithAI(userInput, messagesContainer) {
             messagesContainer.appendChild(errorMsg);
             return;
         }
-        
+
         // 사건을 지도에 추가
         addEventToMap(event);
-        
+
         // 사용자 추가 사건 목록에 저장
         userAddedEvents.push(event);
         saveUserEvents();
-        
+
         // 성공 메시지
         const successMsg = document.createElement('div');
         successMsg.className = 'message character-message';
-        
+
         let icon = event.type === 'battle' ? '⚔️' : event.type === 'trade' ? '🚢' : '👑';
         let yearText = event.year > 0 ? event.year + '년' : 'BC ' + Math.abs(event.year) + '년';
-        
+
         successMsg.innerHTML = `
             <div class="message-bubble">
                 <p><strong>${icon} ${event.name}</strong>을(를) 추가했습니다!<br>
@@ -2680,26 +2781,26 @@ async function addEventWithAI(userInput, messagesContainer) {
         `;
         messagesContainer.appendChild(successMsg);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        
+
         // 지도 이동
         updateYear(event.year);
         map.setView([event.lat, event.lng], 7);
-        
+
     } catch (error) {
         console.error('AI 추가 실패:', error);
         loadingMsg.remove();
-        
+
         const config = appConfig.getConfig();
         const errorMsg = document.createElement('div');
         errorMsg.className = 'message character-message';
-        
+
         let errorDetail = '';
         if (!config.enabled || !config.apiKey) {
             errorDetail = '<br><br><span style="color: #ef4444;">💡 AI 기능을 사용하려면 API 키를 설정해주세요.</span>';
         } else {
             errorDetail = `<br><small style="color: #ef4444;">오류: ${error.message}</small>`;
         }
-        
+
         errorMsg.innerHTML = `
             <div class="message-bubble">
                 <p>죄송합니다. 정보 추가 중 오류가 발생했습니다.${errorDetail}</p>
@@ -2714,8 +2815,8 @@ async function addEventWithAI(userInput, messagesContainer) {
 // 사건을 지도에 추가
 function addEventToMap(event) {
     let icon, popupContent;
-    
-    switch(event.type) {
+
+    switch (event.type) {
         case 'battle':
             icon = L.divIcon({
                 className: 'battle-marker',
@@ -2738,7 +2839,7 @@ function addEventToMap(event) {
                 </div>
             `;
             break;
-            
+
         case 'trade':
             icon = L.divIcon({
                 className: 'trade-marker',
@@ -2760,7 +2861,7 @@ function addEventToMap(event) {
                 </div>
             `;
             break;
-            
+
         case 'person':
             icon = L.divIcon({
                 className: 'people-marker',
@@ -2783,13 +2884,13 @@ function addEventToMap(event) {
             `;
             break;
     }
-    
+
     const marker = L.marker([event.lat, event.lng], { icon: icon })
         .addTo(map)
         .bindPopup(popupContent);
-    
+
     eventMarkers.push(marker);
-    
+
     // 지도를 해당 위치로 이동
     map.setView([event.lat, event.lng], 7);
     marker.openPopup();
@@ -2810,20 +2911,20 @@ function focusOnEvent(lat, lng) {
 // 스마트 검색 (자연어로 사건 검색)
 async function smartSearch(query) {
     const chatMessages = document.getElementById('chat-messages');
-    
+
     // 기존 데이터에서 검색
     const allData = {
         ...battleData,
         ...tradeData,
         ...peopleData
     };
-    
+
     let found = [];
     for (let period in allData) {
         const events = allData[period];
         if (Array.isArray(events)) {
             events.forEach(event => {
-                if (event.name.includes(query) || 
+                if (event.name.includes(query) ||
                     (event.participants && event.participants.some(p => p.includes(query))) ||
                     (event.title && event.title.includes(query))) {
                     found.push(event);
@@ -2831,14 +2932,14 @@ async function smartSearch(query) {
             });
         }
     }
-    
+
     // 사용자 추가 사건에서도 검색
     userAddedEvents.forEach(event => {
         if (event.name.includes(query)) {
             found.push(event);
         }
     });
-    
+
     if (found.length > 0) {
         const resultMsg = document.createElement('div');
         resultMsg.className = 'message-bubble ai';
@@ -2858,14 +2959,14 @@ async function smartSearch(query) {
         notFoundMsg.className = 'message-bubble ai';
         notFoundMsg.innerHTML = `<div>"${query}"에 대한 검색 결과가 없습니다. AI로 검색하시겠습니까?</div>`;
         chatMessages.appendChild(notFoundMsg);
-        
+
         const config = appConfig.getConfig();
         if (config.enabled) {
             // AI로 검색 시도
             await addEventWithAI(query, chatMessages);
         }
     }
-    
+
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
@@ -2874,60 +2975,60 @@ async function findAndShowEvent(query, messagesContainer) {
     // 키워드 추출
     const keywords = query.replace(/어디|위치|있어|있나|보여|줘|에|서|년|가|는|을|를|때|전투|주라|찾아|전체|목록/g, ' ').trim().split(/\s+/);
     const lowerQuery = query.toLowerCase();
-    
+
     // 큰 전쟁의 관련 전투들을 찾기 위한 검색
     const isSearchingRelatedBattles = /때.*전투|전투.*목록|전투.*찾|관련.*전투|주요.*전투/.test(lowerQuery);
-    
+
     // 모든 데이터에서 검색
     let found = null;
     let foundYear = null;
     let maxScore = 0;
     let relatedBattles = []; // 관련 전투 목록
-    
+
     // 전투 데이터 검색
     for (let period in battleData) {
         const battles = battleData[period];
         for (let battle of battles) {
             let score = 0;
-            
+
             // 전투 이름이 검색어에 포함되어 있으면 높은 점수
             if (lowerQuery.includes(battle.name.toLowerCase())) {
                 score += 100;
             }
-            
+
             // 참가국이 모두 포함되어 있으면 높은 점수
             if (battle.participants) {
-                const matchedParticipants = battle.participants.filter(p => 
+                const matchedParticipants = battle.participants.filter(p =>
                     lowerQuery.includes(p.toLowerCase())
                 );
                 score += matchedParticipants.length * 50;
             }
-            
+
             // 키워드 매칭
-            const keywordMatches = keywords.filter(k => 
-                battle.name.includes(k) || 
+            const keywordMatches = keywords.filter(k =>
+                battle.name.includes(k) ||
                 (battle.participants && battle.participants.some(p => p.includes(k)))
             );
             score += keywordMatches.length * 10;
-            
+
             // 가장 높은 점수의 전투 선택
             if (score > maxScore) {
                 maxScore = score;
                 found = { ...battle, type: 'battle', period };
                 foundYear = battle.year;
             }
-            
+
             // 관련 전투 수집 (war 속성이 검색어와 일치하거나 이름에 검색 키워드 포함)
             if (isSearchingRelatedBattles) {
                 const isRelated = battle.war && keywords.some(k => battle.war.includes(k)) ||
-                                 keywords.some(k => k.length > 1 && battle.name.includes(k));
+                    keywords.some(k => k.length > 1 && battle.name.includes(k));
                 if (isRelated && score > 20) {
                     relatedBattles.push({ ...battle, type: 'battle', period });
                 }
             }
         }
     }
-    
+
     // 무역 데이터 검색
     if (!found || maxScore < 50) {
         for (let period in tradeData) {
@@ -2936,7 +3037,7 @@ async function findAndShowEvent(query, messagesContainer) {
                 let score = 0;
                 if (lowerQuery.includes(trade.name.toLowerCase())) score += 100;
                 if (keywords.some(k => trade.name.includes(k))) score += 10;
-                
+
                 if (score > maxScore) {
                     maxScore = score;
                     found = { ...trade, type: 'trade', period };
@@ -2944,7 +3045,7 @@ async function findAndShowEvent(query, messagesContainer) {
             }
         }
     }
-    
+
     // 인물 데이터 검색
     if (!found || maxScore < 50) {
         for (let period in peopleData) {
@@ -2953,7 +3054,7 @@ async function findAndShowEvent(query, messagesContainer) {
                 let score = 0;
                 if (lowerQuery.includes(person.name.toLowerCase())) score += 100;
                 if (keywords.some(k => person.name.includes(k))) score += 10;
-                
+
                 if (score > maxScore) {
                     maxScore = score;
                     found = { ...person, type: 'person', period };
@@ -2961,13 +3062,13 @@ async function findAndShowEvent(query, messagesContainer) {
             }
         }
     }
-    
+
     if (found) {
         // 관련 전투가 있으면 목록으로 표시
         if (relatedBattles.length > 0) {
             const responseMsg = document.createElement('div');
             responseMsg.className = 'message character-message';
-            
+
             let battleList = relatedBattles.map((battle, idx) => {
                 const safeName = battle.name.replace(/'/g, "\\'");
                 const yearText = battle.year > 0 ? battle.year + '년' : 'BC ' + Math.abs(battle.year) + '년';
@@ -2978,7 +3079,7 @@ async function findAndShowEvent(query, messagesContainer) {
                             지도에서 보기
                         </button>`;
             }).join('<br>');
-            
+
             responseMsg.innerHTML = `
                 <div class="message-bubble">
                     <p><strong>⚔️ ${found.name} 관련 전투 ${relatedBattles.length}개</strong>를 찾았습니다!<br><br>
@@ -2988,10 +3089,10 @@ async function findAndShowEvent(query, messagesContainer) {
             `;
             messagesContainer.appendChild(responseMsg);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            
+
             // 전투 레이어 활성화
             toggleLayer('battles');
-            
+
             // 첫 번째 전투 위치로 지도 이동
             if (relatedBattles[0].year) {
                 updateYear(relatedBattles[0].year);
@@ -2999,20 +3100,20 @@ async function findAndShowEvent(query, messagesContainer) {
             if (relatedBattles[0].lat && relatedBattles[0].lng) {
                 map.setView([relatedBattles[0].lat, relatedBattles[0].lng], 6);
             }
-            
+
             return;
         }
-        
+
         // 단일 사건 표시 (기존 로직)
         const responseMsg = document.createElement('div');
         responseMsg.className = 'message character-message';
-        
+
         let icon = found.type === 'battle' ? '⚔️' : found.type === 'trade' ? '🚢' : '👑';
         let yearText = found.year ? (found.year > 0 ? found.year + '년' : 'BC ' + Math.abs(found.year) + '년') : found.years || '';
-        
+
         // 이름에서 특수문자 이스케이프 처리
         const safeName = found.name.replace(/'/g, "\\'");
-        
+
         responseMsg.innerHTML = `
             <div class="message-bubble">
                 <p><strong>${icon} ${found.name}</strong>을(를) 찾았습니다!<br>
@@ -3027,12 +3128,12 @@ async function findAndShowEvent(query, messagesContainer) {
         `;
         messagesContainer.appendChild(responseMsg);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        
+
         // 자동으로 지도 이동 및 마커 표시
         if (foundYear) {
             updateYear(foundYear);
         }
-        
+
         // 해당 레이어 활성화
         if (found.type === 'battle') {
             toggleLayer('battles');
@@ -3041,7 +3142,7 @@ async function findAndShowEvent(query, messagesContainer) {
         } else if (found.type === 'person') {
             toggleLayer('people');
         }
-        
+
         // 지도 포커스
         setTimeout(() => {
             if (found.lat && found.lng) {
@@ -3057,7 +3158,7 @@ async function findAndShowEvent(query, messagesContainer) {
                 });
             }
         }, 500);
-    
+
     } else {
         // 찾지 못한 경우 AI로 자동 추가 시도
         const notFoundMsg = document.createElement('div');
@@ -3070,24 +3171,24 @@ async function findAndShowEvent(query, messagesContainer) {
         `;
         messagesContainer.appendChild(notFoundMsg);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        
+
         // AI로 사건 정보 추출 및 지도에 추가
         try {
             const event = await parseHistoricalEventWithAI(query);
-            
+
             if (event && event.lat && event.lng) {
                 // 지도에 마커 추가
                 addEventToMap(event);
-                
+
                 // 성공 메시지로 교체
                 notFoundMsg.remove();
-                
+
                 const successMsg = document.createElement('div');
                 successMsg.className = 'message character-message';
-                
+
                 let icon = event.type === 'battle' ? '⚔️' : event.type === 'trade' ? '🚢' : '👑';
                 let yearText = event.year > 0 ? event.year + '년' : 'BC ' + Math.abs(event.year) + '년';
-                
+
                 successMsg.innerHTML = `
                     <div class="message-bubble">
                         <p><strong>${icon} ${event.name}</strong>을(를) 추가했습니다!<br>
@@ -3099,30 +3200,30 @@ async function findAndShowEvent(query, messagesContainer) {
                 `;
                 messagesContainer.appendChild(successMsg);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                
+
                 // 지도 이동
                 updateYear(event.year);
                 map.setView([event.lat, event.lng], 7);
-                
+
             } else {
                 throw new Error('위치 정보를 찾을 수 없습니다');
             }
-            
+
         } catch (error) {
             console.error('AI 검색 실패:', error);
             notFoundMsg.remove();
-            
+
             const config = appConfig.getConfig();
             const errorMsg = document.createElement('div');
             errorMsg.className = 'message character-message';
-            
+
             let errorDetail = '';
             if (!config.enabled || !config.apiKey) {
                 errorDetail = '<br><br><span style="color: #ef4444;">💡 AI 기능을 사용하려면 OpenAI API 키를 설정해주세요.</span><br><small>콘솔에서: appConfig.setApiKey("your-api-key")</small>';
             } else {
                 errorDetail = `<br><br><small style="color: #ef4444;">오류: ${error.message}</small>`;
             }
-            
+
             errorMsg.innerHTML = `
                 <div class="message-bubble">
                     <p>죄송합니다. "${query}"에 대한 정보를 찾을 수 없습니다.${errorDetail}</p>
@@ -3141,7 +3242,7 @@ async function showMultipleEvents(query, messagesContainer) {
     let foundEvents = [];
     let category = null;
     let keyword = null;
-    
+
     // 카테고리 파악
     if (lowerQuery.includes('전투')) {
         category = 'battle';
@@ -3151,16 +3252,16 @@ async function showMultipleEvents(query, messagesContainer) {
         else if (lowerQuery.includes('백제')) keyword = '백제';
         else if (lowerQuery.includes('조선')) keyword = '조선';
         else if (lowerQuery.includes('고려')) keyword = '고려';
-        
+
         // 전투 데이터 검색
         for (let period in battleData) {
             battleData[period].forEach(battle => {
                 // 전투 이름 또는 참가국에 검색어가 포함되어 있는지 확인
-                const battleNameMatch = battle.name.toLowerCase().includes(lowerQuery) || 
-                                       lowerQuery.includes(battle.name.toLowerCase());
+                const battleNameMatch = battle.name.toLowerCase().includes(lowerQuery) ||
+                    lowerQuery.includes(battle.name.toLowerCase());
                 const participantMatch = battle.participants?.some(p => lowerQuery.includes(p.toLowerCase()));
                 const keywordMatch = !keyword || battle.participants?.some(p => p.includes(keyword)) || battle.name.includes(keyword);
-                
+
                 // 더 구체적인 검색어가 있으면 우선 사용
                 if (battleNameMatch || (participantMatch && lowerQuery.split(' ').length > 1)) {
                     foundEvents.push({ ...battle, type: 'battle', period });
@@ -3182,7 +3283,7 @@ async function showMultipleEvents(query, messagesContainer) {
         else if (lowerQuery.includes('신라')) keyword = '신라';
         else if (lowerQuery.includes('백제')) keyword = '백제';
         else if (lowerQuery.includes('조선')) keyword = '조선';
-        
+
         for (let period in peopleData) {
             peopleData[period].forEach(person => {
                 if (!keyword || person.title?.includes(keyword) || person.country?.includes(keyword)) {
@@ -3191,38 +3292,38 @@ async function showMultipleEvents(query, messagesContainer) {
             });
         }
     }
-    
+
     if (foundEvents.length > 0) {
         // 응답 메시지
         const responseMsg = document.createElement('div');
         responseMsg.className = 'message character-message';
-        
+
         let icon = category === 'battle' ? '⚔️' : category === 'trade' ? '🚢' : '👑';
         let categoryName = category === 'battle' ? '전투' : category === 'trade' ? '무역' : '인물';
-        
+
         let html = `<div><strong>${icon} ${keyword ? keyword + ' ' : ''}${categoryName} ${foundEvents.length}개</strong>를 찾았습니다!<br><br>`;
-        
+
         foundEvents.slice(0, 10).forEach((event, idx) => {
             let yearText = event.year ? (event.year > 0 ? event.year + '년' : 'BC ' + Math.abs(event.year) + '년') : event.years || '';
             html += `${idx + 1}. <strong>${event.name}</strong> (${yearText})<br>`;
         });
-        
+
         if (foundEvents.length > 10) {
             html += `<br>... 외 ${foundEvents.length - 10}개`;
         }
-        
+
         html += `<br><br><button onclick="showAllEventsOnMap('${category}')" 
                 style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
                 지도에 모두 표시
             </button></div>`;
-        
+
         responseMsg.innerHTML = `
             <div class="message-bubble">${html}</div>
             <span class="message-time">${getCurrentTime()}</span>
         `;
         messagesContainer.appendChild(responseMsg);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        
+
     } else {
         const notFoundMsg = document.createElement('div');
         notFoundMsg.className = 'message character-message';
@@ -3257,11 +3358,11 @@ function showEventOnMap(type, period, name) {
         '1900_1945': 1920,
         '1945_2024': 2000
     };
-    
+
     if (yearMap[period]) {
         updateYear(yearMap[period]);
     }
-    
+
     // 레이어 활성화
     if (type === 'battle') {
         toggleLayer('battles');
@@ -3270,7 +3371,7 @@ function showEventOnMap(type, period, name) {
     } else if (type === 'person') {
         toggleLayer('people');
     }
-    
+
     // 채팅 패널 닫기
     closePanel('panel-chat');
 }
@@ -3284,47 +3385,286 @@ function showAllEventsOnMap(category) {
     } else if (category === 'person') {
         toggleLayer('people');
     }
-    
+
     // 채팅 패널 닫기
     closePanel('panel-chat');
 }
 
 // ===================================
+// 그리기 패널 및 도구
+// ===================================
+
+// 그리기 패널 토글
+function toggleDrawPanel() {
+    try {
+        alert('함수 시작!');
+        const panel = document.getElementById('draw-panel');
+        alert('panel 찾음: ' + (panel ? 'O' : 'X'));
+
+        if (panel) {
+            const isActive = panel.classList.contains('active');
+            if (isActive) {
+                panel.classList.remove('active');
+                alert('패널 닫음');
+            } else {
+                panel.classList.add('active');
+                alert('패널 열림');
+            }
+        } else {
+            alert('패널을 찾을 수 없습니다!');
+        }
+    } catch (error) {
+        alert('에러 발생: ' + error.message);
+    }
+}
+
+// 그리기 도구 활성화 (기본 구현)
+function activateDrawTool(tool) {
+    console.log(`그리기 도구 활성화: ${tool}`);
+}
+
+function activateEditMode() {
+    console.log('편집 모드 활성화');
+}
+
+function activateDeleteMode() {
+    console.log('삭제 모드 활성화');
+}
+
+function clearAllDrawings() {
+    if (drawnItems && confirm('모든 그림을 지우시겠습니까?')) {
+        drawnItems.clearLayers();
+        alert('✅ 모든 그림이 삭제되었습니다.');
+    }
+}
+
+// ===================================
+// GeoJSON 생성 및 다운로드
+// ===================================
+
+// 그린 도형들을 GeoJSON으로 변환 (자유 그리기 -> Polygon 자동 변환)
+function convertDrawnItemsToGeoJSON() {
+    const features = [];
+    const name = document.getElementById('geojson-name').value || 'Unnamed';
+    const color = document.getElementById('geojson-color').value;
+
+    if (!drawnItems) {
+        console.error('drawnItems가 초기화되지 않았습니다');
+        return null;
+    }
+
+    let convertedCount = 0;
+
+    drawnItems.eachLayer(function (layer) {
+        try {
+            let feature;
+
+            // 1. Polyline(자유 그리기 포함)을 Polygon으로 변환
+            if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
+                // Polyline의 좌표를 가져옴
+                const latlngs = layer.getLatLngs();
+
+                // 좌표가 중첩 배열인 경우 (MultiPolyline 등) 평탄화 필요할 수 있음
+                // 여기서는 단순 Polyline 가정
+
+                // GeoJSON Polygon 형식으로 변환 (첫 점과 끝 점이 같아야 함)
+                // Leaflet의 toGeoJSON()은 Polyline을 LineString으로 변환하므로,
+                // 수동으로 Polygon Feature를 생성합니다.
+
+                const coordinates = latlngs.map(latlng => [latlng.lng, latlng.lat]);
+
+                // 닫힌 루프가 아니면 첫 점을 끝에 추가
+                if (coordinates.length > 2) {
+                    const first = coordinates[0];
+                    const last = coordinates[coordinates.length - 1];
+                    if (first[0] !== last[0] || first[1] !== last[1]) {
+                        coordinates.push(first);
+                    }
+
+                    feature = {
+                        type: "Feature",
+                        properties: {},
+                        geometry: {
+                            type: "Polygon",
+                            coordinates: [coordinates]
+                        }
+                    };
+                    console.log('Polyline을 Polygon으로 변환했습니다.');
+                } else {
+                    // 점이 너무 적으면 그냥 LineString으로
+                    feature = layer.toGeoJSON();
+                }
+            } else {
+                // 2. 이미 Polygon이거나 다른 도형인 경우
+                feature = layer.toGeoJSON();
+            }
+
+            if (!feature) return;
+
+            // 프로젝트 형식에 맞게 속성 설정
+            feature.properties = {
+                NAME: name,
+                name: name,
+                color: color,
+                fill: color,
+                'fill-opacity': 0.5,
+                stroke: color,
+                'stroke-width': 2,
+                // 원래 타입 정보 저장 (참고용)
+                originalType: layer instanceof L.Polygon ? 'polygon' : 'polyline'
+            };
+
+            features.push(feature);
+            convertedCount++;
+
+        } catch (e) {
+            console.error('레이어 변환 실패:', e);
+        }
+    });
+
+    if (convertedCount === 0) {
+        alert('변환할 도형이 없습니다. 지도에 그림을 그려주세요.');
+        return null;
+    }
+
+    console.log(`✅ ${convertedCount}개의 도형을 GeoJSON으로 변환했습니다.`);
+
+    return {
+        type: 'FeatureCollection',
+        features: features
+    };
+}
+
+// GeoJSON 다운로드
+function exportToGeoJSON() {
+    const geojson = convertDrawnItemsToGeoJSON();
+
+    if (!geojson || geojson.features.length === 0) {
+        alert('먼저 지도에 영역을 그려주세요!');
+        return;
+    }
+
+    const name = document.getElementById('geojson-name').value || 'map-data';
+    const filename = `${name.replace(/\s+/g, '_').toLowerCase()}.geojson`;
+
+    downloadGeoJSON(geojson, filename);
+}
+
+// GeoJSON 파일 다운로드 헬퍼
+function downloadGeoJSON(geojson, filename) {
+    const dataStr = JSON.stringify(geojson, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+    alert(`✅ ${filename} 파일이 다운로드되었습니다!\n\ngeojson/ 폴더에 저장하여 사용하세요.`);
+}
+
+// 클립보드에 복사
+function copyGeoJSONToClipboard() {
+    const geojson = convertDrawnItemsToGeoJSON();
+
+    if (!geojson || geojson.features.length === 0) {
+        alert('먼저 지도에 영역을 그려주세요!');
+        return;
+    }
+
+    const dataStr = JSON.stringify(geojson, null, 2);
+
+    navigator.clipboard.writeText(dataStr).then(() => {
+        alert('✅ GeoJSON이 클립보드에 복사되었습니다!');
+    }).catch(err => {
+        console.error('복사 실패:', err);
+        // 폴백: textarea 사용
+        const textarea = document.createElement('textarea');
+        textarea.value = dataStr;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            alert('✅ GeoJSON이 클립보드에 복사되었습니다!');
+        } catch (e) {
+            alert('❌ 복사에 실패했습니다. 미리보기에서 직접 복사해주세요.');
+        }
+        document.body.removeChild(textarea);
+    });
+}
+
+// 미리보기
+function previewGeoJSON() {
+    const geojson = convertDrawnItemsToGeoJSON();
+
+    if (!geojson || geojson.features.length === 0) {
+        alert('먼저 지도에 영역을 그려주세요!');
+        return;
+    }
+
+    const modal = document.getElementById('geojson-modal');
+    const preview = document.getElementById('geojson-preview');
+
+    preview.textContent = JSON.stringify(geojson, null, 2);
+    modal.style.display = 'flex';
+}
+
+// 모달 닫기
+function closeGeoJSONModal() {
+    document.getElementById('geojson-modal').style.display = 'none';
+}
+
+// ===================================
 // 초기화
 // ===================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // AI 설정 로드
     loadAIConfig();
-    
+
     // 지도 초기화
     initMap();
-    
+
     // 초기 연도 설정
     updateYear(475);
-    
+
     // 메인 화면 표시
     showScreen('screen-main-map');
-    
+
+    // 그리기 패널 버튼 이벤트 리스너 추가
+    const drawPanelBtn = document.getElementById('draw-panel-btn');
+    if (drawPanelBtn) {
+        drawPanelBtn.addEventListener('click', function () {
+            console.log('버튼 클릭 이벤트 발생!');
+            toggleDrawPanel();
+        });
+        console.log('그리기 패널 버튼 이벤트 리스너 등록 완료');
+    } else {
+        console.error('draw-panel-btn을 찾을 수 없습니다!');
+    }
+
     console.log('역사 지도 학습 서비스가 시작되었습니다.');
 });
 
 // 채팅에서 사용하는 스마트 검색
 async function smartSearchInChat(query) {
     const messagesContainer = document.getElementById('chat-messages');
-    
+
     // 기존 데이터에서 검색
     const allData = {
         ...battleData,
         ...tradeData,
         ...peopleData
     };
-    
+
     let found = [];
     for (let period in allData) {
         const events = allData[period];
         if (Array.isArray(events)) {
             events.forEach(event => {
-                if (event.name.includes(query) || 
+                if (event.name.includes(query) ||
                     (event.participants && event.participants.some(p => p.includes(query))) ||
                     (event.title && event.title.includes(query))) {
                     found.push(event);
@@ -3332,14 +3672,14 @@ async function smartSearchInChat(query) {
             });
         }
     }
-    
+
     // 사용자 추가 사건에서도 검색
     userAddedEvents.forEach(event => {
         if (event.name.includes(query)) {
             found.push(event);
         }
     });
-    
+
     if (found.length > 0) {
         const resultMsg = document.createElement('div');
         resultMsg.className = 'message character-message';
@@ -3367,15 +3707,15 @@ async function smartSearchInChat(query) {
         </div>
         <span class="message-time">${getCurrentTime()}</span>
     `;
-    messagesContainer.appendChild(notFoundMsg);
-    
-    if (config.enabled) {
-        // AI로 검색 시도
-        await addEventWithAI(query, messagesContainer);
-    }
-}
+        messagesContainer.appendChild(notFoundMsg);
 
-messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (config.enabled) {
+            // AI로 검색 시도
+            await addEventWithAI(query, messagesContainer);
+        }
+    }
+
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
 // ===================================
@@ -3384,7 +3724,7 @@ messagesContainer.scrollTop = messagesContainer.scrollHeight;
 function toggleDrawPanel() {
     const panel = document.getElementById('draw-panel');
     const btn = document.getElementById('draw-panel-btn');
-    
+
     if (panel.classList.contains('open')) {
         panel.classList.remove('open');
         btn.classList.remove('active');
@@ -3410,26 +3750,26 @@ function activateDrawTool(type) {
     if (currentDrawHandler) {
         currentDrawHandler.disable();
     }
-    
+
     // 자유 그리기 모드 비활성화
     if (isFreehandDrawing) {
         deactivateFreehand();
     }
-    
+
     // 모든 버튼 비활성화
     document.querySelectorAll('.draw-tool-btn').forEach(btn => btn.classList.remove('active'));
-    
+
     // 자유 그리기 모드
     if (type === 'freehand') {
         activateFreehand();
         event.target.classList.add('active');
         return;
     }
-    
+
     // 새 핸들러 생성 및 활성화
     let options = {};
-    
-    switch(type) {
+
+    switch (type) {
         case 'polyline':
             options = { shapeOptions: { color: '#3b82f6', weight: 4 } };
             currentDrawHandler = new L.Draw.Polyline(map, options);
@@ -3450,7 +3790,7 @@ function activateDrawTool(type) {
             currentDrawHandler = new L.Draw.Marker(map, {});
             break;
     }
-    
+
     if (currentDrawHandler) {
         currentDrawHandler.enable();
         // 활성 버튼 표시
@@ -3463,7 +3803,7 @@ function activateFreehand() {
     isFreehandDrawing = true;
     freehandPath = [];
     map.getContainer().style.cursor = 'crosshair';
-    
+
     // 지도 드래그 및 줌 비활성화
     map.dragging.disable();
     map.touchZoom.disable();
@@ -3471,17 +3811,17 @@ function activateFreehand() {
     map.scrollWheelZoom.disable();
     map.boxZoom.disable();
     map.keyboard.disable();
-    
+
     // 역사 지도 레이어의 상호작용 비활성화
     if (historicalLayer) {
-        historicalLayer.eachLayer(function(layer) {
+        historicalLayer.eachLayer(function (layer) {
             layer.off('mouseover');
             layer.off('mouseout');
             layer.off('click');
             layer.closePopup();
         });
     }
-    
+
     // 마우스 이벤트 리스너
     map.on('mousedown', onFreehandMouseDown);
     map.on('mousemove', onFreehandMouseMove);
@@ -3493,7 +3833,7 @@ function deactivateFreehand() {
     isFreehandDrawing = false;
     freehandPath = [];
     map.getContainer().style.cursor = '';
-    
+
     // 지도 드래그 및 줌 다시 활성화
     map.dragging.enable();
     map.touchZoom.enable();
@@ -3501,12 +3841,12 @@ function deactivateFreehand() {
     map.scrollWheelZoom.enable();
     map.boxZoom.enable();
     map.keyboard.enable();
-    
+
     // 역사 지도 레이어의 상호작용 다시 활성화
     if (historicalLayer) {
-        historicalLayer.eachLayer(function(layer) {
+        historicalLayer.eachLayer(function (layer) {
             // hover 효과 다시 추가
-            layer.on('mouseover', function(e) {
+            layer.on('mouseover', function (e) {
                 e.target.setStyle({
                     weight: 3,
                     color: '#3b82f6',
@@ -3514,27 +3854,27 @@ function deactivateFreehand() {
                 });
                 e.target.bringToFront();
             });
-            
-            layer.on('mouseout', function(e) {
+
+            layer.on('mouseout', function (e) {
                 if (historicalLayer) {
                     historicalLayer.resetStyle(e.target);
                 }
             });
-            
+
             // 클릭 이벤트 다시 추가
-            layer.on('click', function(e) {
+            layer.on('click', function (e) {
                 e.target.bringToFront();
                 layer.openPopup();
             });
         });
     }
-    
+
     // 임시 선 제거
     if (freehandPolyline) {
         map.removeLayer(freehandPolyline);
         freehandPolyline = null;
     }
-    
+
     // 이벤트 리스너 제거
     map.off('mousedown', onFreehandMouseDown);
     map.off('mousemove', onFreehandMouseMove);
@@ -3544,9 +3884,9 @@ function deactivateFreehand() {
 // 마우스 다운 이벤트
 function onFreehandMouseDown(e) {
     if (!isFreehandDrawing) return;
-    
+
     freehandPath = [e.latlng];
-    
+
     // 임시 선 생성
     freehandPolyline = L.polyline(freehandPath, {
         color: '#ef4444',
@@ -3558,10 +3898,10 @@ function onFreehandMouseDown(e) {
 // 마우스 이동 이벤트
 function onFreehandMouseMove(e) {
     if (!isFreehandDrawing || freehandPath.length === 0) return;
-    
+
     // 경로에 점 추가
     freehandPath.push(e.latlng);
-    
+
     // 임시 선 업데이트
     if (freehandPolyline) {
         freehandPolyline.setLatLngs(freehandPath);
@@ -3571,19 +3911,19 @@ function onFreehandMouseMove(e) {
 // 마우스 업 이벤트
 function onFreehandMouseUp(e) {
     if (!isFreehandDrawing || freehandPath.length < 2) return;
-    
+
     // 최종 경로에 점 추가
     freehandPath.push(e.latlng);
-    
+
     // 임시 선 제거
     if (freehandPolyline) {
         map.removeLayer(freehandPolyline);
         freehandPolyline = null;
     }
-    
+
     // 부드럽게 만들기 (점 간격 최적화)
     const smoothPath = smoothFreehandPath(freehandPath);
-    
+
     // 최종 선 생성
     const finalLine = L.polyline(smoothPath, {
         color: '#ef4444',
@@ -3591,14 +3931,14 @@ function onFreehandMouseUp(e) {
         opacity: 1,
         pane: 'drawPane'  // 그리기 전용 pane 사용
     });
-    
+
     // 타입 정보 저장 (삭제 가능하게)
     finalLine.layerType = 'freehand';
-    
+
     drawnItems.addLayer(finalLine);
-    
+
     saveDrawings();
-    
+
     // 경로 초기화
     freehandPath = [];
 }
@@ -3606,19 +3946,19 @@ function onFreehandMouseUp(e) {
 // 자유 그리기 경로 부드럽게 만들기
 function smoothFreehandPath(path) {
     if (path.length < 3) return path;
-    
+
     const smoothed = [];
     const step = Math.max(1, Math.floor(path.length / 50)); // 최대 50개 점으로 줄이기
-    
+
     for (let i = 0; i < path.length; i += step) {
         smoothed.push(path[i]);
     }
-    
+
     // 마지막 점 추가
     if (smoothed[smoothed.length - 1] !== path[path.length - 1]) {
         smoothed.push(path[path.length - 1]);
     }
-    
+
     return smoothed;
 }
 
@@ -3628,13 +3968,13 @@ function activateEditMode() {
         currentDrawHandler.disable();
         currentDrawHandler = null;
     }
-    
+
     // 편집 모드 활성화
     const editHandler = new L.EditToolbar.Edit(map, {
         featureGroup: drawnItems
     });
     editHandler.enable();
-    
+
     // 활성 버튼 표시
     document.querySelectorAll('.draw-tool-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
@@ -3646,13 +3986,13 @@ function activateDeleteMode() {
         currentDrawHandler.disable();
         currentDrawHandler = null;
     }
-    
+
     // 삭제 모드 활성화
     const deleteHandler = new L.EditToolbar.Delete(map, {
         featureGroup: drawnItems
     });
     deleteHandler.enable();
-    
+
     // 활성 버튼 표시
     document.querySelectorAll('.draw-tool-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
@@ -3663,7 +4003,7 @@ function clearAllDrawings() {
         alert('지울 메모가 없습니다.');
         return;
     }
-    
+
     if (confirm('모든 메모를 지우시겠습니까?')) {
         drawnItems.clearLayers();
         saveDrawings();
@@ -3674,7 +4014,7 @@ function saveDrawings() {
     const data = [];
     drawnItems.eachLayer(function (layer) {
         let geojson;
-        
+
         // Polyline이나 Polygon 처리
         if (layer instanceof L.Polyline || layer instanceof L.Polygon) {
             geojson = layer.toGeoJSON();
@@ -3689,7 +4029,7 @@ function saveDrawings() {
             if (layer.layerType === 'freehand') {
                 geojson.properties.shapeType = 'freehand';
             }
-        } 
+        }
         // Circle 처리
         else if (layer instanceof L.Circle) {
             const center = layer.getLatLng();
@@ -3726,7 +4066,7 @@ function saveDrawings() {
                 fillOpacity: layer.options.fillOpacity || 0.3
             };
         }
-        
+
         data.push(geojson);
     });
     localStorage.setItem('mapDrawings', JSON.stringify(data));
@@ -3739,7 +4079,7 @@ function loadDrawings() {
             const drawings = JSON.parse(data);
             drawings.forEach(geojson => {
                 let layer;
-                
+
                 // Circle 복원
                 if (geojson.properties?.shapeType === 'circle' && geojson.geometry.type === 'Point') {
                     const center = [geojson.geometry.coordinates[1], geojson.geometry.coordinates[0]];
@@ -3767,7 +4107,7 @@ function loadDrawings() {
                 else {
                     const style = geojson.properties?.style || {};
                     layer = L.geoJSON(geojson, {
-                        style: function() {
+                        style: function () {
                             return {
                                 color: style.color || '#3b82f6',
                                 weight: style.weight || 3,
@@ -3840,12 +4180,12 @@ function goToPage(page) {
 function updateTextbookPage() {
     const img = document.getElementById('textbook-page-image');
     const pageInput = document.getElementById('page-input');
-    
+
     if (img) {
         img.src = `img/textbook/historybook/${currentPage}.png`;
         img.style.transform = `scale(${zoomLevel})`;
     }
-    
+
     if (pageInput) {
         pageInput.value = currentPage;
     }
@@ -3877,11 +4217,11 @@ function resetZoom() {
 function updateZoom() {
     const img = document.getElementById('textbook-page-image');
     const zoomText = document.getElementById('zoom-level');
-    
+
     if (img) {
         img.style.transform = `scale(${zoomLevel})`;
     }
-    
+
     if (zoomText) {
         zoomText.textContent = Math.round(zoomLevel * 100) + '%';
     }
@@ -3891,32 +4231,32 @@ function updateZoom() {
 function handlePageClick(event) {
     const img = event.target;
     const rect = img.getBoundingClientRect();
-    
+
     // 이미지 내 상대 좌표 계산
     const x = Math.round((event.clientX - rect.left) / rect.width * 100 * 100) / 100;
     const y = Math.round((event.clientY - rect.top) / rect.height * 100 * 100) / 100;
-    
+
     // 좌표 표시 (개발용)
     const coordDiv = document.getElementById('click-coords');
     const coordText = document.getElementById('coord-text');
-    
+
     if (coordDiv && coordText) {
         coordText.textContent = `${x}%, ${y}%`;
         coordDiv.style.display = 'block';
-        
+
         setTimeout(() => {
             coordDiv.style.display = 'none';
         }, 3000);
     }
-    
+
     console.log(`페이지 ${currentPage} 클릭 좌표: ${x}%, ${y}%`);
-    
+
     // TODO: 나중에 특정 영역 클릭 시 기능 추가
     // 예: checkClickableArea(currentPage, x, y);
 }
 
 // 키보드 단축키
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     const panel = document.getElementById('panel-textbook');
     if (panel && panel.classList.contains('open')) {
         if (e.key === 'ArrowRight') {
@@ -3951,7 +4291,7 @@ function toggleTextbookDrawMode() {
     const toolbar = document.getElementById('textbook-draw-toolbar');
     const canvas = document.getElementById('textbook-draw-canvas');
     const toggleBtn = document.getElementById('textbook-draw-toggle-btn');
-    
+
     if (textbookDrawMode) {
         toolbar.style.display = 'block';
         canvas.style.display = 'block';
@@ -3972,23 +4312,23 @@ function toggleTextbookDrawMode() {
 function initTextbookCanvas() {
     textbookCanvas = document.getElementById('textbook-draw-canvas');
     const img = document.getElementById('textbook-page-image');
-    
+
     if (!textbookCanvas || !img) return;
-    
+
     // 캔버스 크기를 이미지와 동일하게 설정
     textbookCanvas.width = img.width;
     textbookCanvas.height = img.height;
     textbookCanvas.style.width = img.offsetWidth + 'px';
     textbookCanvas.style.height = img.offsetHeight + 'px';
-    
+
     textbookCtx = textbookCanvas.getContext('2d');
-    
+
     // 이벤트 리스너
     textbookCanvas.addEventListener('mousedown', startTextbookDrawing);
     textbookCanvas.addEventListener('mousemove', drawOnTextbook);
     textbookCanvas.addEventListener('mouseup', stopTextbookDrawing);
     textbookCanvas.addEventListener('mouseout', stopTextbookDrawing);
-    
+
     // 터치 이벤트
     textbookCanvas.addEventListener('touchstart', handleTextbookTouchStart);
     textbookCanvas.addEventListener('touchmove', handleTextbookTouchMove);
@@ -3998,13 +4338,13 @@ function initTextbookCanvas() {
 // 그리기 도구 설정
 function setTextbookDrawTool(tool) {
     textbookDrawTool = tool;
-    
+
     // 버튼 활성화 표시
     document.querySelectorAll('.textbook-draw-tool-btn').forEach(btn => {
         btn.style.background = '';
         btn.style.color = '';
     });
-    
+
     const activeBtn = document.querySelector(`[data-tool="${tool}"]`);
     if (activeBtn) {
         activeBtn.style.background = 'var(--primary-color)';
@@ -4024,18 +4364,18 @@ function startTextbookDrawing(e) {
 // 그리기
 function drawOnTextbook(e) {
     if (!isTextbookDrawing || !textbookDrawMode) return;
-    
+
     const rect = textbookCanvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     const colorInput = document.getElementById('textbook-draw-color');
     const widthInput = document.getElementById('textbook-draw-width');
-    
+
     textbookCtx.beginPath();
     textbookCtx.moveTo(textbookLastX, textbookLastY);
     textbookCtx.lineTo(x, y);
-    
+
     if (textbookDrawTool === 'pen') {
         textbookCtx.strokeStyle = colorInput.value;
         textbookCtx.lineWidth = widthInput.value;
@@ -4051,10 +4391,10 @@ function drawOnTextbook(e) {
         textbookCtx.lineWidth = widthInput.value * 3;
         textbookCtx.lineCap = 'round';
     }
-    
+
     textbookCtx.stroke();
     textbookCtx.globalCompositeOperation = 'source-over';
-    
+
     textbookLastX = x;
     textbookLastY = y;
 }
@@ -4088,9 +4428,9 @@ function handleTextbookTouchMove(e) {
 // 현재 페이지 필기 저장
 function saveTextbookDrawing() {
     if (!textbookCanvas) return;
-    
+
     textbookDrawings[currentPage] = textbookCanvas.toDataURL();
-    
+
     // 로컬 스토리지에 저장
     try {
         localStorage.setItem('textbookDrawings', JSON.stringify(textbookDrawings));
@@ -4104,14 +4444,14 @@ function saveTextbookDrawing() {
 // 페이지 필기 불러오기
 function loadTextbookDrawing(silent = false) {
     if (!textbookCanvas || !textbookCtx) return;
-    
+
     // 캔버스 초기화
     textbookCtx.clearRect(0, 0, textbookCanvas.width, textbookCanvas.height);
-    
+
     // 저장된 필기 불러오기
     if (textbookDrawings[currentPage]) {
         const img = new Image();
-        img.onload = function() {
+        img.onload = function () {
             textbookCtx.drawImage(img, 0, 0, textbookCanvas.width, textbookCanvas.height);
             if (!silent) {
                 alert('📂 필기를 불러왔습니다!');
@@ -4130,7 +4470,7 @@ function loadTextbookDrawing(silent = false) {
 // 현재 페이지 필기 지우기 (화면만 지움, 저장된 데이터는 유지)
 function clearTextbookDrawing() {
     if (!textbookCtx) return;
-    
+
     if (confirm('현재 화면의 필기를 지우시겠습니까?\n(저장된 필기는 유지됩니다)')) {
         textbookCtx.clearRect(0, 0, textbookCanvas.width, textbookCanvas.height);
         alert('✅ 화면이 지워졌습니다. 저장하지 않으면 이전 필기를 불러올 수 있습니다.');
@@ -4140,7 +4480,7 @@ function clearTextbookDrawing() {
 // 현재 페이지 저장된 필기 완전 삭제
 function deleteTextbookDrawing() {
     if (!textbookCtx) return;
-    
+
     if (confirm('현재 페이지의 저장된 필기를 완전히 삭제하시겠습니까?\n(이 작업은 되돌릴 수 없습니다)')) {
         textbookCtx.clearRect(0, 0, textbookCanvas.width, textbookCanvas.height);
         delete textbookDrawings[currentPage];
@@ -4163,7 +4503,7 @@ function loadAllTextbookDrawings() {
 
 // 페이지 변경 시 필기도 함께 업데이트
 const originalUpdateTextbookPage = updateTextbookPage;
-updateTextbookPage = function() {
+updateTextbookPage = function () {
     originalUpdateTextbookPage();
     if (textbookDrawMode) {
         setTimeout(() => {
@@ -4174,16 +4514,16 @@ updateTextbookPage = function() {
 };
 
 // 굵기 슬라이더 값 표시
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const widthSlider = document.getElementById('textbook-draw-width');
     const widthValue = document.getElementById('textbook-draw-width-value');
-    
+
     if (widthSlider && widthValue) {
-        widthSlider.addEventListener('input', function() {
+        widthSlider.addEventListener('input', function () {
             widthValue.textContent = this.value + 'px';
         });
     }
-    
+
     // 저장된 필기 불러오기
     loadAllTextbookDrawings();
 });
@@ -4195,13 +4535,13 @@ document.addEventListener('DOMContentLoaded', function() {
 // 지도에서 국가 영역 하이라이트
 function highlightOnMap(countryName) {
     console.log(`${countryName} 영역 하이라이트`);
-    
+
     // 패널 닫기
     closePanel('panel-textbook');
-    
+
     // 지도에 포커스하고 해당 국가 영역을 찾아서 하이라이트
     if (historicalLayer) {
-        historicalLayer.eachLayer(function(layer) {
+        historicalLayer.eachLayer(function (layer) {
             if (layer.feature && layer.feature.properties) {
                 const name = layer.feature.properties.name || '';
                 if (name.includes(countryName)) {
@@ -4211,16 +4551,16 @@ function highlightOnMap(countryName) {
                         fillOpacity: layer.options.fillOpacity,
                         weight: layer.options.weight
                     };
-                    
+
                     layer.setStyle({
                         fillColor: '#ffff00',
                         fillOpacity: 0.6,
                         weight: 3
                     });
-                    
+
                     // 해당 위치로 지도 이동
                     map.fitBounds(layer.getBounds());
-                    
+
                     // 3초 후 원래 스타일로 복원
                     setTimeout(() => {
                         layer.setStyle(originalStyle);
@@ -4234,15 +4574,15 @@ function highlightOnMap(countryName) {
 // 지도에서 특정 위치 표시
 function showLocationOnMap(lat, lng) {
     console.log(`위치 표시: ${lat}, ${lng}`);
-    
+
     // 패널 닫기
     closePanel('panel-textbook');
-    
+
     // 지도 이동
     map.flyTo([lat, lng], 8, {
         duration: 1.5
     });
-    
+
     // 임시 마커 추가
     const tempMarker = L.marker([lat, lng], {
         icon: L.divIcon({
@@ -4251,7 +4591,7 @@ function showLocationOnMap(lat, lng) {
             iconSize: [30, 30]
         })
     }).addTo(map);
-    
+
     // 5초 후 마커 제거
     setTimeout(() => {
         map.removeLayer(tempMarker);
@@ -4261,35 +4601,29 @@ function showLocationOnMap(lat, lng) {
 // 특정 연도로 타임라인 이동
 function jumpToYear(year) {
     console.log(`${year}년으로 이동`);
-    
+
     // 패널 닫기
     closePanel('panel-textbook');
-    
+
     // 연도 업데이트
-    currentYear = year;
-    document.getElementById('year-slider').value = year;
-    document.getElementById('year-display').textContent = year + '년';
-    
-    // 시대 업데이트
-    updateEra();
-    
-    // 지도 업데이트
-    updateMap(year);
-    
+    updateYear(year);
+
     // 애니메이션 효과
-    const yearDisplay = document.getElementById('year-display');
-    yearDisplay.style.transform = 'scale(1.3)';
-    yearDisplay.style.color = 'var(--primary-color)';
-    setTimeout(() => {
-        yearDisplay.style.transform = 'scale(1)';
-        yearDisplay.style.color = '';
-    }, 500);
+    const yearDisplay = document.getElementById('era-year'); // ID 수정됨
+    if (yearDisplay) {
+        yearDisplay.style.transform = 'scale(1.3)';
+        yearDisplay.style.color = 'var(--primary-color)';
+        setTimeout(() => {
+            yearDisplay.style.transform = 'scale(1)';
+            yearDisplay.style.color = '';
+        }, 500);
+    }
 }
 
 // 인물 정보 팝업
 function openCharacterInfo(characterName) {
     console.log(`${characterName} 정보 열기`);
-    
+
     // 인물 대화 패널 열기
     openCharacterChat(characterName);
 }
@@ -4303,9 +4637,9 @@ function showTermDefinition(term) {
         '화랑도': '신라 시대의 청소년 수련 단체로, 심신 수양과 무예 연마를 통해 인재를 양성했습니다.',
         '골품제': '신라의 신분 제도로, 혈통에 따라 사회적 지위가 결정되었습니다.'
     };
-    
+
     const definition = definitions[term] || `${term}에 대한 설명입니다.`;
-    
+
     // 간단한 알림으로 표시
     alert(`📚 ${term}\n\n${definition}`);
 }
@@ -4323,4 +4657,221 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// ===================================
+// 타임라인 UI 로직 (OldMapsOnline 스타일)
+// ===================================
+const MIN_YEAR = -2000;
+const MAX_YEAR = 2024;
+const TOTAL_YEARS = MAX_YEAR - MIN_YEAR;
+
+// 시대 정의
+const ERAS = [
+    { name: '고조선', start: -2333, end: -108, color: '#9ca3af' },
+    { name: '원삼국', start: -108, end: 300, color: '#d1d5db' },
+    { name: '삼국', start: 300, end: 668, color: '#fda4af' },
+    { name: '남북국', start: 668, end: 918, color: '#7dd3fc' },
+    { name: '고려', start: 918, end: 1392, color: '#86efac' },
+    { name: '조선', start: 1392, end: 1897, color: '#fde047' },
+    { name: '대한제국', start: 1897, end: 1910, color: '#f59e0b' },
+    { name: '일제', start: 1910, end: 1945, color: '#dc2626' },
+    { name: '현대', start: 1945, end: 2024, color: '#60a5fa' }
+];
+
+// 연도로부터 시대 인덱스 찾기
+function getEraIndexForYear(year) {
+    for (let i = 0; i < ERAS.length; i++) {
+        if (year >= ERAS[i].start && year <= ERAS[i].end) {
+            return i;
+        }
+    }
+    return 2; // 기본값: 삼국시대
+}
+
+// 시대에 맞게 타임라인 재렌더링
+function updateTimelineForEra(eraIndex) {
+    const axis = document.getElementById('timeline-axis');
+    const erasContainer = document.getElementById('timeline-eras');
+
+    if (!axis || !erasContainer) return;
+
+    const era = ERAS[eraIndex];
+    const eraStart = era.start;
+    const eraEnd = era.end;
+    const eraYears = eraEnd - eraStart;
+
+    // 1. 눈금 생성 (시대에 맞는 간격으로)
+    axis.innerHTML = '';
+    let tickInterval = 100; // 기본 100년 간격
+    if (eraYears < 100) tickInterval = 10;
+    else if (eraYears < 500) tickInterval = 50;
+
+    for (let year = Math.ceil(eraStart / tickInterval) * tickInterval; year <= eraEnd; year += tickInterval) {
+        const percent = ((year - eraStart) / eraYears) * 100;
+
+        const tick = document.createElement('div');
+        tick.className = 'timeline-tick major';
+        tick.style.left = `${percent}%`;
+
+        const label = document.createElement('div');
+        label.className = 'timeline-tick-label';
+        label.textContent = year < 0 ? `BC ${Math.abs(year)}` : year;
+        label.style.left = `${percent}%`;
+
+        axis.appendChild(tick);
+        axis.appendChild(label);
+    }
+
+    // 2. 현재 시대 블록만 표시 (전체 너비)
+    erasContainer.innerHTML = '';
+    const block = document.createElement('div');
+    block.className = 'timeline-era-block';
+    block.style.left = '0%';
+    block.style.width = '100%';
+    block.style.backgroundColor = era.color;
+    block.textContent = era.name;
+    block.title = `${era.name} (${era.start < 0 ? 'BC ' + Math.abs(era.start) : era.start} ~ ${era.end < 0 ? 'BC ' + Math.abs(era.end) : era.end})`;
+    erasContainer.appendChild(block);
+
+    // 3. 시대 이름 표시 업데이트
+    const eraNameEl = document.getElementById('timeline-era-name');
+    if (eraNameEl) {
+        eraNameEl.textContent = era.name;
+    }
+
+    // 4. 현재 연도가 시대 범위를 벗어나면 시대 중간으로 이동
+    if (currentYear < eraStart || currentYear > eraEnd) {
+        currentYear = Math.floor((eraStart + eraEnd) / 2);
+        updateYear(currentYear);
+    } else {
+        updateTimelineHandle(currentYear);
+    }
+}
+
+// 특정 시대로 전환
+function switchToEra(eraIndex) {
+    if (eraIndex < 0 || eraIndex >= ERAS.length) return;
+    if (isEraTransitioning) return;
+
+    isEraTransitioning = true;
+    currentEraIndex = eraIndex;
+
+    // 부드러운 전환을 위한 애니메이션
+    const wrapper = document.getElementById('timeline-wrapper');
+    if (wrapper) {
+        wrapper.style.opacity = '0.5';
+    }
+
+    setTimeout(() => {
+        updateTimelineForEra(eraIndex);
+        if (wrapper) {
+            wrapper.style.opacity = '1';
+        }
+        isEraTransitioning = false;
+    }, 300);
+}
+
+// 다음 시대로 이동
+function nextEra() {
+    if (currentEraIndex < ERAS.length - 1) {
+        switchToEra(currentEraIndex + 1);
+    }
+}
+
+// 이전 시대로 이동
+function prevEra() {
+    if (currentEraIndex > 0) {
+        switchToEra(currentEraIndex - 1);
+    }
+}
+
+function initTimeline() {
+    const axis = document.getElementById('timeline-axis');
+    const erasContainer = document.getElementById('timeline-eras');
+    const wrapper = document.getElementById('timeline-wrapper');
+    const handle = document.getElementById('timeline-handle');
+
+    if (!axis || !erasContainer || !wrapper || !handle) return;
+
+    console.log('initTimeline called - era-focused mode');
+
+    // 현재 시대 설정
+    updateTimelineForEra(currentEraIndex);
+
+    // 3. 이벤트 리스너 (클릭 및 드래그)
+    let isDragging = false;
+
+    wrapper.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        handleTimelineInput(e);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            handleTimelineInput(e);
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    // 초기 위치 설정
+    updateTimelineHandle(currentYear);
+}
+
+function handleTimelineInput(e) {
+    const wrapper = document.getElementById('timeline-wrapper');
+    if (!wrapper) return;
+
+    const rect = wrapper.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+
+    // 범위 제한
+    x = Math.max(0, Math.min(x, rect.width));
+
+    const percent = x / rect.width;
+
+    // 현재 시대 범위 내에서 연도 계산
+    const era = ERAS[currentEraIndex];
+    let year = Math.round(era.start + (percent * (era.end - era.start)));
+
+    // 경계 도달 시 시대 전환
+    const threshold = (era.end - era.start) * 0.02; // 시대 범위의 2%를 임계값으로 사용
+
+    if (year <= era.start + threshold && currentEraIndex > 0) {
+        // 시대 시작점에 도달 -> 이전 시대로
+        switchToEra(currentEraIndex - 1);
+        // 이전 시대의 끝 부분으로 이동
+        const prevEra = ERAS[currentEraIndex - 1];
+        year = prevEra.end - Math.floor((prevEra.end - prevEra.start) * 0.1);
+        setTimeout(() => updateYear(year), 350);
+        return;
+    } else if (year >= era.end - threshold && currentEraIndex < ERAS.length - 1) {
+        // 시대 끝점에 도달 -> 다음 시대로
+        switchToEra(currentEraIndex + 1);
+        // 다음 시대의 시작 부분으로 이동
+        const nextEra = ERAS[currentEraIndex + 1];
+        year = nextEra.start + Math.floor((nextEra.end - nextEra.start) * 0.1);
+        setTimeout(() => updateYear(year), 350);
+        return;
+    }
+
+    updateYear(year);
+}
+
+function updateTimelineHandle(year) {
+    const handle = document.getElementById('timeline-handle');
+    const label = document.getElementById('handle-label');
+
+    if (handle && label) {
+        // 현재 시대 범위 내에서 위치 계산
+        const era = ERAS[currentEraIndex];
+        const safeYear = Math.max(era.start, Math.min(year, era.end));
+        const percent = ((safeYear - era.start) / (era.end - era.start)) * 100;
+
+        handle.style.left = `${percent}%`;
+        label.textContent = safeYear < 0 ? `BC ${Math.abs(safeYear)}` : safeYear;
+    }
 }

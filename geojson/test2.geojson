@@ -4,12 +4,12 @@
     {
       "type": "Feature",
       "properties": {
-        "NAME": "고조선",
-        "name": "고조선",
-        "color": "#7c3aed",
-        "fill": "#7c3aed",
+        "NAME": "test2",
+        "name": "test2",
+        "color": "#ef4444",
+        "fill": "#ef4444",
         "fill-opacity": 0.5,
-        "stroke": "#7c3aed",
+        "stroke": "#ef4444",
         "stroke-width": 2,
         "originalType": "polyline"
       },

@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>역사 지도 학습 서비스</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
     <link rel="stylesheet" href="styles/main.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-polylinedecorator/1.6.0/leaflet.polylineDecorator.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-polylinedecorator/1.6.0/leaflet.polylineDecorator.min.js"></script>
     <script src="lib/d3.v5.min.js"></script>
     <script src="scripts/config.js"></script>
 </head>
+
 <body>
     <!-- A. 메인 지도 화면 -->
     <div id="screen-main-map" class="screen active">
@@ -26,7 +32,7 @@
         <!-- 지도 컨테이너 -->
         <div id="map-container" class="map-container">
             <div id="map" class="map-canvas"></div>
-            
+
             <!-- 지도 레이어 필터 버튼 -->
             <div class="map-layer-controls">
                 <button class="layer-btn active" onclick="toggleLayer('default')" data-layer="default">
@@ -42,16 +48,16 @@
                     👑 인물
                 </button>
             </div>
-            
+
             <!-- 메모 버튼 (왼쪽 아래) -->
-            <button class="memo-toggle-btn" onclick="toggleDrawPanel()" id="draw-panel-btn" title="지도 메모">
+            <button class="memo-toggle-btn" id="draw-panel-btn" title="지도 메모">
                 ✏️
             </button>
-            
+
             <!-- 그리기 도구 패널 -->
             <div class="draw-panel" id="draw-panel">
                 <div class="draw-panel-header">
-                    <h3>📝 지도 메모</h3>
+                    <h3>📝 지도 메모 & GeoJSON 생성</h3>
                     <button class="close-draw-btn" onclick="toggleDrawPanel()">×</button>
                 </div>
                 <div class="draw-panel-content">
@@ -84,6 +90,31 @@
                     <button class="draw-tool-btn clear-btn" onclick="clearAllDrawings()" title="모두 지우기">
                         🧹 모두 지우기
                     </button>
+
+                    <!-- GeoJSON 추출 섹션 -->
+                    <hr style="margin: 12px 0; border: none; border-top: 2px solid #3b82f6;">
+                    <div class="geojson-section">
+                        <h4>🗺️ GeoJSON 생성</h4>
+                        <p class="help-text">그린 도형을 GeoJSON으로 변환합니다</p>
+
+                        <label>국가/지역 이름:</label>
+                        <input type="text" id="geojson-name" placeholder="예: 고구려">
+
+                        <label>색상 (선택):</label>
+                        <input type="color" id="geojson-color" value="#ef4444">
+
+                        <button class="geojson-btn" onclick="exportToGeoJSON()">
+                            📥 GeoJSON 다운로드
+                        </button>
+
+                        <button class="geojson-btn" onclick="copyGeoJSONToClipboard()">
+                            📋 클립보드에 복사
+                        </button>
+
+                        <button class="geojson-btn" onclick="previewGeoJSON()">
+                            👁️ 미리보기
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -95,41 +126,35 @@
         </div>
 
         <!-- 연도 슬라이더 -->
+        <!-- 타임라인 컨트롤 (OldMapsOnline 스타일) -->
         <div class="timeline-control">
-            <button class="timeline-btn" onclick="toggleAutoPlay()" id="play-pause-btn">▶</button>
-            <button class="timeline-btn speed-btn" onclick="changePlaybackSpeed()" id="speed-btn">1x</button>
-            <button class="timeline-btn" onclick="previousYear()">◀</button>
-            <div class="slider-container">
-                <div class="era-markers">
-                    <span class="era-marker" style="left: 0%; color: #6b7280;">고조선</span>
-                    <span class="era-marker" style="left: 47%; color: #9ca3af;">원삼국</span>
-                    <span class="era-marker" style="left: 57.1%; color: #f43f5e;">삼국</span>
-                    <span class="era-marker" style="left: 67.1%; color: #0ea5e9;">남북국</span>
-                    <span class="era-marker" style="left: 72.7%; color: #10b981;">고려</span>
-                    <span class="era-marker" style="left: 84.3%; color: #eab308;">조선</span>
-                    <span class="era-marker" style="left: 96.8%; color: #f59e0b;">대한제국</span>
-                    <span class="era-marker" style="left: 97.1%; color: #dc2626; font-size: 8px;">일제</span>
-                    <span class="era-marker" style="left: 98.1%; color: #3b82f6;">현대</span>
-                </div>
-                <input type="range" 
-                       id="year-slider" 
-                       class="year-slider" 
-                       min="-2000" 
-                       max="2024" 
-                       value="475" 
-                       step="1"
-                       oninput="updateYear(this.value)">
-                <div class="slider-labels">
-                    <span>BC 2000</span>
-                    <span>BC 500</span>
-                    <span>0</span>
-                    <span>500</span>
-                    <span>1000</span>
-                    <span>1500</span>
-                    <span>2024</span>
+            <button class="timeline-btn" onclick="prevEra()" title="이전 시대">◀</button>
+            <button class="timeline-btn" onclick="toggleAutoPlay()" id="play-pause-btn" title="자동 재생">▶</button>
+            <button class="timeline-btn speed-btn" onclick="changePlaybackSpeed()" id="speed-btn"
+                title="재생 속도">1x</button>
+
+            <div class="timeline-wrapper" id="timeline-wrapper">
+                <!-- 시대 이름 표시 -->
+                <div class="timeline-era-name" id="timeline-era-name">삼국시대</div>
+
+                <div class="timeline-container">
+                    <!-- 눈금과 연도 표시 영역 -->
+                    <div class="timeline-axis" id="timeline-axis"></div>
+
+                    <!-- 시대 블록 표시 영역 -->
+                    <div class="timeline-eras" id="timeline-eras"></div>
+
+                    <!-- 드래그 가능한 핸들 -->
+                    <div class="timeline-handle" id="timeline-handle">
+                        <div class="handle-line"></div>
+                        <div class="handle-knob">
+                            <div class="handle-year" id="handle-label">475</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <button class="timeline-btn" onclick="nextYear()">▶</button>
+
+            <button class="timeline-btn" onclick="nextEra()" title="다음 시대">▶</button>
         </div>
 
         <!-- 하단 퀵 액션 버튼 -->
@@ -161,19 +186,21 @@
             <h2 class="side-panel-title">📚 교과서 보기 (총 220페이지)</h2>
             <button class="close-panel-btn" onclick="closePanel('panel-textbook')">×</button>
         </div>
-        
+
         <!-- 교과서 뷰어 컨트롤 -->
-        <div style="padding: 12px 20px; background: var(--bg-light); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px;">
+        <div
+            style="padding: 12px 20px; background: var(--bg-light); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px;">
             <button onclick="previousPage()" class="textbook-nav-btn" title="이전 페이지">◀</button>
-            <input type="number" id="page-input" value="0" min="0" max="219" 
-                   style="width: 70px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; text-align: center;"
-                   onchange="goToPage(this.value)">
+            <input type="number" id="page-input" value="0" min="0" max="219"
+                style="width: 70px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; text-align: center;"
+                onchange="goToPage(this.value)">
             <span id="page-info" style="color: var(--text-light); font-size: 14px;">/ 220</span>
             <button onclick="nextPage()" class="textbook-nav-btn" title="다음 페이지">▶</button>
-            
+
             <div style="flex: 1;"></div>
-            
-            <button id="textbook-draw-toggle-btn" onclick="toggleTextbookDrawMode()" class="textbook-nav-btn" title="필기 모드 ON/OFF">✏️ 필기</button>
+
+            <button id="textbook-draw-toggle-btn" onclick="toggleTextbookDrawMode()" class="textbook-nav-btn"
+                title="필기 모드 ON/OFF">✏️ 필기</button>
             <button onclick="zoomOut()" class="textbook-nav-btn" title="축소">🔍-</button>
             <span id="zoom-level" style="color: var(--text-light); font-size: 14px;">100%</span>
             <button onclick="zoomIn()" class="textbook-nav-btn" title="확대">🔍+</button>
@@ -182,60 +209,74 @@
 
         <div class="side-panel-content" style="padding: 0; overflow: auto; position: relative;">
             <!-- 교과서 이미지와 캔버스 컨테이너 -->
-            <div id="textbook-viewer" style="padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100%; position: relative;">
+            <div id="textbook-viewer"
+                style="padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100%; position: relative;">
                 <div style="position: relative; display: inline-block;">
-                    <img id="textbook-page-image" 
-                         src="img/textbook/historybook/0.png" 
-                         style="max-width: 100%; height: auto; transition: transform 0.2s; display: block;"
-                         alt="교과서 페이지">
-                    <canvas id="textbook-draw-canvas" 
-                            style="position: absolute; top: 0; left: 0; pointer-events: none; display: none;"></canvas>
+                    <img id="textbook-page-image" src="img/textbook/historybook/0.png"
+                        style="max-width: 100%; height: auto; transition: transform 0.2s; display: block;"
+                        alt="교과서 페이지">
+                    <canvas id="textbook-draw-canvas"
+                        style="position: absolute; top: 0; left: 0; pointer-events: none; display: none;"></canvas>
                 </div>
             </div>
-            
+
             <!-- 필기 도구 하단 바 -->
-            <div id="textbook-draw-toolbar" style="position: sticky; bottom: 0; left: 0; right: 0; background: white; border-top: 2px solid var(--border-color); padding: 12px 20px; display: none; box-shadow: 0 -2px 8px rgba(0,0,0,0.1);">
+            <div id="textbook-draw-toolbar"
+                style="position: sticky; bottom: 0; left: 0; right: 0; background: white; border-top: 2px solid var(--border-color); padding: 12px 20px; display: none; box-shadow: 0 -2px 8px rgba(0,0,0,0.1);">
                 <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                     <span style="font-weight: 600; color: var(--text-dark);">✏️ 필기 도구</span>
-                    
-                    <button onclick="setTextbookDrawTool('pen')" class="textbook-draw-tool-btn" data-tool="pen" title="펜">🖊️</button>
-                    <button onclick="setTextbookDrawTool('highlighter')" class="textbook-draw-tool-btn" data-tool="highlighter" title="형광펜">🖍️</button>
-                    <button onclick="setTextbookDrawTool('eraser')" class="textbook-draw-tool-btn" data-tool="eraser" title="지우개">🧹</button>
-                    
+
+                    <button onclick="setTextbookDrawTool('pen')" class="textbook-draw-tool-btn" data-tool="pen"
+                        title="펜">🖊️</button>
+                    <button onclick="setTextbookDrawTool('highlighter')" class="textbook-draw-tool-btn"
+                        data-tool="highlighter" title="형광펜">🖍️</button>
+                    <button onclick="setTextbookDrawTool('eraser')" class="textbook-draw-tool-btn" data-tool="eraser"
+                        title="지우개">🧹</button>
+
                     <div style="width: 1px; height: 24px; background: var(--border-color);"></div>
-                    
+
                     <label style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 14px;">색상:</span>
-                        <input type="color" id="textbook-draw-color" value="#000000" style="width: 40px; height: 32px; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer;">
+                        <input type="color" id="textbook-draw-color" value="#000000"
+                            style="width: 40px; height: 32px; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer;">
                     </label>
-                    
+
                     <label style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 14px;">굵기:</span>
                         <input type="range" id="textbook-draw-width" min="1" max="10" value="2" style="width: 100px;">
                         <span id="textbook-draw-width-value" style="font-size: 14px; min-width: 30px;">2px</span>
                     </label>
-                    
+
                     <div style="flex: 1;"></div>
-                    
-                    <button onclick="clearTextbookDrawing()" class="textbook-nav-btn" style="background: var(--warning-color, #f59e0b); color: white; border-color: var(--warning-color, #f59e0b);" title="화면 지우기">🧹 지우기</button>
-                    <button onclick="deleteTextbookDrawing()" class="textbook-nav-btn" style="background: var(--danger-color); color: white; border-color: var(--danger-color);" title="저장된 필기 삭제">🗑️ 삭제</button>
-                    <button onclick="loadTextbookDrawing()" class="textbook-nav-btn" style="background: var(--primary-color); color: white; border-color: var(--primary-color);" title="불러오기">📂 불러오기</button>
-                    <button onclick="saveTextbookDrawing()" class="textbook-nav-btn" style="background: var(--success-color); color: white; border-color: var(--success-color);" title="저장">💾 저장</button>
+
+                    <button onclick="clearTextbookDrawing()" class="textbook-nav-btn"
+                        style="background: var(--warning-color, #f59e0b); color: white; border-color: var(--warning-color, #f59e0b);"
+                        title="화면 지우기">🧹 지우기</button>
+                    <button onclick="deleteTextbookDrawing()" class="textbook-nav-btn"
+                        style="background: var(--danger-color); color: white; border-color: var(--danger-color);"
+                        title="저장된 필기 삭제">🗑️ 삭제</button>
+                    <button onclick="loadTextbookDrawing()" class="textbook-nav-btn"
+                        style="background: var(--primary-color); color: white; border-color: var(--primary-color);"
+                        title="불러오기">📂 불러오기</button>
+                    <button onclick="saveTextbookDrawing()" class="textbook-nav-btn"
+                        style="background: var(--success-color); color: white; border-color: var(--success-color);"
+                        title="저장">💾 저장</button>
                 </div>
             </div>
-            
+
             <!-- 클릭 좌표 표시 (개발용) -->
-                     style="max-width: 100%; height: auto; transition: transform 0.2s; cursor: crosshair;"
-                     onclick="handlePageClick(event)"
-                     alt="교과서 페이지">
-            </div>
-            
-            <!-- 클릭 좌표 표시 (개발용) -->
-            <div id="click-coords" style="position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; display: none;">
-                좌표: <span id="coord-text">0, 0</span>
-            </div>
+            style="max-width: 100%; height: auto; transition: transform 0.2s; cursor: crosshair;"
+            onclick="handlePageClick(event)"
+            alt="교과서 페이지">
         </div>
+
+        <!-- 클릭 좌표 표시 (개발용) -->
+        <div id="click-coords"
+            style="position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; display: none;">
+            좌표: <span id="coord-text">0, 0</span>
         </div>
+    </div>
+    </div>
     </div>
 
     <!-- 인물 사이드 패널 -->
@@ -307,13 +348,11 @@
             <!-- 입력 영역 -->
             <div style="padding: 16px 20px; background: white; border-top: 1px solid var(--border-color);">
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" 
-                           id="chat-input" 
-                           placeholder="질문을 입력하세요..." 
-                           style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px;"
-                           onkeypress="if(event.key==='Enter') sendMessage()">
-                    <button onclick="sendMessage()" 
-                            style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">전송</button>
+                    <input type="text" id="chat-input" placeholder="질문을 입력하세요..."
+                        style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px;"
+                        onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button onclick="sendMessage()"
+                        style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">전송</button>
                 </div>
             </div>
         </div>
@@ -343,13 +382,11 @@
             <!-- 입력 영역 -->
             <div style="padding: 16px 20px; background: white; border-top: 1px solid var(--border-color);">
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" 
-                           id="character-chat-input" 
-                           placeholder="질문을 입력하세요..." 
-                           style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px;"
-                           onkeypress="if(event.key==='Enter') sendCharacterMessage()">
-                    <button onclick="sendCharacterMessage()" 
-                            style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">전송</button>
+                    <input type="text" id="character-chat-input" placeholder="질문을 입력하세요..."
+                        style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px;"
+                        onkeypress="if(event.key==='Enter') sendCharacterMessage()">
+                    <button onclick="sendCharacterMessage()"
+                        style="padding: 12px 24px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">전송</button>
                 </div>
             </div>
         </div>
@@ -362,14 +399,17 @@
             <button class="close-panel-btn" onclick="closePanel('panel-debate')">×</button>
         </div>
         <div class="side-panel-content">
-            <div class="debate-topic-card" style="background: var(--bg-light); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <div class="debate-topic-card"
+                style="background: var(--bg-light); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
                 <h3 style="margin: 0 0 12px 0; color: var(--text-dark);">신라의 삼국통일은 진정한 통일인가?</h3>
                 <p style="color: var(--text-light); margin-bottom: 16px;">당의 힘을 빌린 신라의 통일을 어떻게 평가해야 할까요?</p>
                 <div style="display: flex; gap: 12px;">
-                    <button onclick="selectDebateSide('agree')" style="flex: 1; padding: 12px; background: var(--success-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <button onclick="selectDebateSide('agree')"
+                        style="flex: 1; padding: 12px; background: var(--success-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
                         👍 진정한 통일
                     </button>
-                    <button onclick="selectDebateSide('disagree')" style="flex: 1; padding: 12px; background: var(--danger-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <button onclick="selectDebateSide('disagree')"
+                        style="flex: 1; padding: 12px; background: var(--danger-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
                         👎 불완전한 통일
                     </button>
                 </div>
@@ -378,15 +418,18 @@
             <!-- 찬성 의견 -->
             <div style="margin-bottom: 24px;">
                 <h4 style="color: var(--success-color); margin-bottom: 12px;">👍 진정한 통일 (12명)</h4>
-                <div class="debate-message" style="background: white; padding: 16px; border-radius: 8px; border-left: 4px solid var(--success-color); margin-bottom: 12px;">
+                <div class="debate-message"
+                    style="background: white; padding: 16px; border-radius: 8px; border-left: 4px solid var(--success-color); margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-weight: 600;">김OO</span>
                         <span style="font-size: 12px; color: var(--text-light);">2시간 전</span>
                     </div>
                     <p style="color: var(--text-dark); margin: 0;">한반도 대부분을 통일했고, 이후 고려로 이어지는 기반을 마련했습니다.</p>
                     <div style="display: flex; gap: 12px; margin-top: 12px;">
-                        <button style="background: none; border: none; color: var(--text-light); cursor: pointer;">👍 8</button>
-                        <button style="background: none; border: none; color: var(--text-light); cursor: pointer;">💬 3</button>
+                        <button style="background: none; border: none; color: var(--text-light); cursor: pointer;">👍
+                            8</button>
+                        <button style="background: none; border: none; color: var(--text-light); cursor: pointer;">💬
+                            3</button>
                     </div>
                 </div>
             </div>
@@ -394,15 +437,18 @@
             <!-- 반대 의견 -->
             <div>
                 <h4 style="color: var(--danger-color); margin-bottom: 12px;">👎 불완전한 통일 (12명)</h4>
-                <div class="debate-message" style="background: white; padding: 16px; border-radius: 8px; border-left: 4px solid var(--danger-color);">
+                <div class="debate-message"
+                    style="background: white; padding: 16px; border-radius: 8px; border-left: 4px solid var(--danger-color);">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="font-weight: 600;">이OO</span>
                         <span style="font-size: 12px; color: var(--text-light);">1시간 전</span>
                     </div>
                     <p style="color: var(--text-dark); margin: 0;">고구려 영토 대부분을 잃었고, 외세의 힘을 빌렸다는 한계가 있습니다.</p>
                     <div style="display: flex; gap: 12px; margin-top: 12px;">
-                        <button style="background: none; border: none; color: var(--text-light); cursor: pointer;">👍 15</button>
-                        <button style="background: none; border: none; color: var(--text-light); cursor: pointer;">💬 7</button>
+                        <button style="background: none; border: none; color: var(--text-light); cursor: pointer;">👍
+                            15</button>
+                        <button style="background: none; border: none; color: var(--text-light); cursor: pointer;">💬
+                            7</button>
                     </div>
                 </div>
             </div>
@@ -432,14 +478,20 @@
                     <button class="option-btn" onclick="selectOption(this, 4)">④ 서라벌</button>
                 </div>
 
-                <button onclick="submitAnswer(2)" style="width: 100%; margin-top: 24px; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">정답 확인</button>
+                <button onclick="submitAnswer(2)"
+                    style="width: 100%; margin-top: 24px; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">정답
+                    확인</button>
             </div>
 
-            <div id="answer-explanation" style="display: none; background: var(--bg-light); padding: 20px; border-radius: 12px; border-left: 4px solid var(--success-color);">
+            <div id="answer-explanation"
+                style="display: none; background: var(--bg-light); padding: 20px; border-radius: 12px; border-left: 4px solid var(--success-color);">
                 <h4 style="color: var(--success-color); margin: 0 0 12px 0;">✅ 정답입니다!</h4>
                 <p style="color: var(--text-dark); margin: 0 0 12px 0;"><strong>② 평양</strong></p>
-                <p style="color: var(--text-light); margin: 0;">장수왕은 427년(일부 기록에는 475년) 평양으로 천도하여 남진 정책을 강화했습니다. 이는 백제와 신라를 압박하기 위한 전략적 선택이었습니다.</p>
-                <button onclick="nextQuestion()" style="width: 100%; margin-top: 16px; padding: 12px; background: white; color: var(--primary-color); border: 2px solid var(--primary-color); border-radius: 8px; font-weight: 600; cursor: pointer;">다음 문제</button>
+                <p style="color: var(--text-light); margin: 0;">장수왕은 427년(일부 기록에는 475년) 평양으로 천도하여 남진 정책을 강화했습니다. 이는 백제와
+                    신라를 압박하기 위한 전략적 선택이었습니다.</p>
+                <button onclick="nextQuestion()"
+                    style="width: 100%; margin-top: 16px; padding: 12px; background: white; color: var(--primary-color); border: 2px solid var(--primary-color); border-radius: 8px; font-weight: 600; cursor: pointer;">다음
+                    문제</button>
             </div>
         </div>
     </div>
@@ -494,29 +546,37 @@
                     <div class="content-section">
                         <h3>1-1. 삼국의 형성</h3>
                         <p class="textbook-text">
-                            <span class="clickable-country" onclick="highlightOnMap('고구려')" title="지도에서 보기">고구려</span>, 
-                            <span class="clickable-country" onclick="highlightOnMap('백제')" title="지도에서 보기">백제</span>, 
-                            <span class="clickable-country" onclick="highlightOnMap('신라')" title="지도에서 보기">신라</span>는 한반도와 만주 지역에서 성장한 세 나라입니다. 
-                            고구려는 <span class="clickable-place" onclick="showLocationOnMap(40.0, 124.5)" title="압록강 위치 보기">압록강</span> 유역에서 시작하여 
-                            <span class="clickable-person" onclick="openCharacterInfo('광개토대왕')" title="광개토대왕 정보">광개토대왕</span> 시기에 크게 확장되었습니다.
+                            <span class="clickable-country" onclick="highlightOnMap('고구려')" title="지도에서 보기">고구려</span>,
+                            <span class="clickable-country" onclick="highlightOnMap('백제')" title="지도에서 보기">백제</span>,
+                            <span class="clickable-country" onclick="highlightOnMap('신라')" title="지도에서 보기">신라</span>는
+                            한반도와 만주 지역에서 성장한 세 나라입니다.
+                            고구려는 <span class="clickable-place" onclick="showLocationOnMap(40.0, 124.5)"
+                                title="압록강 위치 보기">압록강</span> 유역에서 시작하여
+                            <span class="clickable-person" onclick="openCharacterInfo('광개토대왕')"
+                                title="광개토대왕 정보">광개토대왕</span> 시기에 크게 확장되었습니다.
                         </p>
-                        <div class="textbook-image" onclick="jumpToYear(475)" style="cursor: pointer;" title="475년 지도 보기">
+                        <div class="textbook-image" onclick="jumpToYear(475)" style="cursor: pointer;"
+                            title="475년 지도 보기">
                             <div class="image-placeholder">
                                 [삼국 영토 변화 지도 - 클릭하여 지도에서 확인]
                             </div>
                         </div>
                         <p class="textbook-text highlight-text">
-                            <span class="clickable-year" onclick="jumpToYear(475)" title="475년으로 이동">475년</span> 
-                            <span class="clickable-person" onclick="openCharacterInfo('장수왕')" title="장수왕 정보">장수왕</span>은 
-                            <span class="clickable-place" onclick="showLocationOnMap(39.0, 125.7)" title="평양 위치 보기">평양</span>으로 수도를 옮기며 남진 정책을 강화했습니다.
+                            <span class="clickable-year" onclick="jumpToYear(475)" title="475년으로 이동">475년</span>
+                            <span class="clickable-person" onclick="openCharacterInfo('장수왕')" title="장수왕 정보">장수왕</span>은
+                            <span class="clickable-place" onclick="showLocationOnMap(39.0, 125.7)"
+                                title="평양 위치 보기">평양</span>으로 수도를 옮기며 남진 정책을 강화했습니다.
                         </p>
                     </div>
 
                     <div class="key-terms">
                         <h4>핵심 용어</h4>
-                        <span class="term-badge" onclick="openCharacterInfo('광개토대왕')" style="cursor: pointer;">광개토대왕</span>
-                        <span class="term-badge" onclick="showTermDefinition('남진정책')" style="cursor: pointer;">남진정책</span>
-                        <span class="term-badge" onclick="showLocationOnMap(39.0, 125.7)" style="cursor: pointer;">평양 천도</span>
+                        <span class="term-badge" onclick="openCharacterInfo('광개토대왕')"
+                            style="cursor: pointer;">광개토대왕</span>
+                        <span class="term-badge" onclick="showTermDefinition('남진정책')"
+                            style="cursor: pointer;">남진정책</span>
+                        <span class="term-badge" onclick="showLocationOnMap(39.0, 125.7)" style="cursor: pointer;">평양
+                            천도</span>
                     </div>
                 </div>
             </div>
@@ -653,8 +713,8 @@
                 <div class="chat-messages" id="chat-messages">
                     <div class="message character-message">
                         <div class="message-bubble">
-                            <p>안녕하십니까. 나는 고구려 제19대 임금 광개토대왕이오. 
-                            내가 다스리던 시대에 대해 궁금한 점이 있으면 무엇이든 물어보시오.</p>
+                            <p>안녕하십니까. 나는 고구려 제19대 임금 광개토대왕이오.
+                                내가 다스리던 시대에 대해 궁금한 점이 있으면 무엇이든 물어보시오.</p>
                             <button class="tts-btn" onclick="speakMessage(this)">🔊</button>
                         </div>
                         <span class="message-time">오후 2:30</span>
@@ -669,10 +729,10 @@
 
                     <div class="message character-message">
                         <div class="message-bubble">
-                            <p>나는 즉위 초부터 백제를 공격하여 한강 이북 지역을 차지하였소. 
-                            또한 만주 지역의 여러 부족을 복속시키고, 
-                            신라를 도와 왜구를 격퇴하였소. 
-                            이를 통해 고구려는 동아시아 최강국으로 성장하였소.</p>
+                            <p>나는 즉위 초부터 백제를 공격하여 한강 이북 지역을 차지하였소.
+                                또한 만주 지역의 여러 부족을 복속시키고,
+                                신라를 도와 왜구를 격퇴하였소.
+                                이를 통해 고구려는 동아시아 최강국으로 성장하였소.</p>
                             <button class="tts-btn" onclick="speakMessage(this)">🔊</button>
                         </div>
                         <span class="message-time">오후 2:31</span>
@@ -680,11 +740,8 @@
                 </div>
 
                 <div class="chat-input-area">
-                    <input type="text" 
-                           class="chat-input" 
-                           id="chat-input" 
-                           placeholder="질문을 입력하세요..."
-                           onkeypress="if(event.key==='Enter') sendMessage()">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="질문을 입력하세요..."
+                        onkeypress="if(event.key==='Enter') sendMessage()">
                     <button class="send-btn" onclick="sendMessage()">📤</button>
                 </div>
 
@@ -711,7 +768,7 @@
         <div class="debate-topic">
             <h2 class="topic-title">토론 주제</h2>
             <p class="topic-question">
-                "세종대왕의 한글 창제는 백성을 위한 것이었을까, 
+                "세종대왕의 한글 창제는 백성을 위한 것이었을까,
                 왕권 강화를 위한 것이었을까?"
             </p>
             <div class="debate-timer">
@@ -770,8 +827,8 @@
                                 <span class="message-time">2분 전</span>
                             </div>
                             <div class="message-content">
-                                훈민정음 서문에 "나라 말이 중국과 달라... 
-                                백성이 말하고자 하는 바가 있어도 제 뜻을 펴지 못하는 사람이 많다"고 
+                                훈민정음 서문에 "나라 말이 중국과 달라...
+                                백성이 말하고자 하는 바가 있어도 제 뜻을 펴지 못하는 사람이 많다"고
                                 명시되어 있습니다. 백성을 위한 것이 명확합니다.
                             </div>
                             <div class="message-actions">
@@ -790,7 +847,7 @@
                                 <span class="message-time">1분 전</span>
                             </div>
                             <div class="message-content">
-                                당시 양반들이 한글 창제를 반대한 것도 
+                                당시 양반들이 한글 창제를 반대한 것도
                                 백성을 위한 것이라는 증거입니다.
                             </div>
                             <div class="message-actions">
@@ -815,8 +872,8 @@
                                 <span class="message-time">3분 전</span>
                             </div>
                             <div class="message-content">
-                                한글 창제로 왕이 직접 백성과 소통할 수 있게 되어 
-                                양반의 중재 없이도 통치가 가능해졌습니다. 
+                                한글 창제로 왕이 직접 백성과 소통할 수 있게 되어
+                                양반의 중재 없이도 통치가 가능해졌습니다.
                                 이는 왕권 강화의 수단이었습니다.
                             </div>
                             <div class="message-actions">
@@ -835,7 +892,7 @@
                                 <span class="message-time">방금</span>
                             </div>
                             <div class="message-content">
-                                실제로 한글은 궁궐 내에서 먼저 사용되었고, 
+                                실제로 한글은 궁궐 내에서 먼저 사용되었고,
                                 법령 전달에 활용되었습니다.
                             </div>
                             <div class="message-actions">
@@ -853,11 +910,8 @@
 
             <!-- 의견 입력 영역 -->
             <div class="debate-input-area">
-                <input type="text" 
-                       class="debate-input" 
-                       id="debate-input" 
-                       placeholder="찬성 의견을 작성하세요..."
-                       onkeypress="if(event.key==='Enter') sendDebateMessage()">
+                <input type="text" class="debate-input" id="debate-input" placeholder="찬성 의견을 작성하세요..."
+                    onkeypress="if(event.key==='Enter') sendDebateMessage()">
                 <button class="send-btn-large" onclick="sendDebateMessage()">
                     의견 제출
                 </button>
@@ -924,12 +978,12 @@
                 <div class="explanation-content">
                     <h4>해설</h4>
                     <p>
-                        평양 천도는 광개토대왕의 아들인 <strong>장수왕</strong>의 업적입니다. 
-                        장수왕은 427년에 국내성에서 평양으로 수도를 옮겨 
+                        평양 천도는 광개토대왕의 아들인 <strong>장수왕</strong>의 업적입니다.
+                        장수왕은 427년에 국내성에서 평양으로 수도를 옮겨
                         남진 정책을 본격적으로 추진했습니다.
                     </p>
                     <p>
-                        광개토대왕(391-413)은 만주 지역을 크게 확장하고, 
+                        광개토대왕(391-413)은 만주 지역을 크게 확장하고,
                         신라를 도와 왜구를 격퇴했으며, 백제를 공격하여 영토를 넓혔습니다.
                     </p>
                 </div>
@@ -1136,6 +1190,50 @@
     <!-- 메뉴 오버레이 -->
     <div id="menu-overlay" class="menu-overlay" onclick="toggleMenu()"></div>
 
-    <script src="scripts/app.js"></script>
+    <!-- GeoJSON 미리보기 모달 -->
+    <div class="geojson-modal" id="geojson-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>GeoJSON 미리보기</h3>
+                <button onclick="closeGeoJSONModal()"
+                    style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light);">×</button>
+            </div>
+            <div class="modal-body">
+                <pre id="geojson-preview"></pre>
+            </div>
+            <div class="modal-footer">
+                <button onclick="copyGeoJSONToClipboard()"
+                    style="padding: 10px 20px; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">📋
+                    복사</button>
+                <button onclick="exportToGeoJSON()"
+                    style="padding: 10px 20px; background: var(--success-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">📥
+                    다운로드</button>
+                <button onclick="closeGeoJSONModal()"
+                    style="padding: 10px 20px; background: var(--text-light); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 그리기 패널 토글 스크립트 (캐시 문제 해결) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('draw-panel-btn');
+            if (btn) {
+                btn.onclick = function () {
+                    const panel = document.getElementById('draw-panel');
+                    if (panel) {
+                        panel.classList.toggle('active');
+                        this.classList.toggle('active');
+                        console.log('패널 토글:', panel.classList.contains('active') ? '열림' : '닫힘');
+                    }
+                };
+                console.log('✅ 그리기 패널 버튼 이벤트 등록 완료 (인라인)');
+            }
+        });
+    </script>
+
+    <script src="scripts/app.js?v=2"></script>
 </body>
+
 </html>
+```
