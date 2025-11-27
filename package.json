@@ -1,0 +1,12 @@
+{
+  "name": "east-asian-historical-map",
+  "version": "1.0.0",
+  "description": "Interactive East Asian historical map learning service",
+  "scripts": {
+    "start": "npx http-server -p 8000 -o history-learning-app.html",
+    "dev": "npx http-server -p 8000"
+  },
+  "keywords": ["history", "map", "education", "east-asia"],
+  "author": "",
+  "license": "MIT"
+}

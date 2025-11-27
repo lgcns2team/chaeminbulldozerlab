@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>역사 지도 학습 서비스</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="lib/d3.v5.min.js"></script>
+</head>
+<body>
+    <!-- A. 메인 지도 화면 -->
+    <div id="screen-main-map" class="screen active">
+        <!-- 헤더 -->
+        <header class="app-header">
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+            <h1 class="app-title">역사 지도</h1>
+            <div class="user-profile" onclick="showScreen('screen-login')">👤</div>
+        </header>
+
+        <!-- 지도 컨테이너 -->
+        <div id="map-container" class="map-container">
+            <div id="map" class="map-canvas"></div>
+        </div>
+
+        <!-- 시대 정보 표시 -->
+        <div class="era-display">
+            <h2 class="era-title" id="era-title">삼국시대</h2>
+            <p class="era-year" id="era-year">475년</p>
+        </div>
+
+        <!-- 연도 슬라이더 -->
+        <div class="timeline-control">
+            <button class="timeline-btn" onclick="previousYear()">◀</button>
+            <div class="slider-container">
+                <input type="range" 
+                       id="year-slider" 
+                       class="year-slider" 
+                       min="-2000" 
+                       max="2024" 
+                       value="475" 
+                       step="1"
+                       oninput="updateYear(this.value)">
+                <div class="slider-labels">
+                    <span>BC 2000</span>
+                    <span>BC 500</span>
+                    <span>0</span>
+                    <span>500</span>
+                    <span>1000</span>
+                    <span>1500</span>
+                    <span>2024</span>
+                </div>
+            </div>
+            <button class="timeline-btn" onclick="nextYear()">▶</button>
+        </div>
+
+        <!-- 하단 퀵 액션 버튼 -->
+        <div class="quick-actions">
+            <button class="action-btn" onclick="showScreen('screen-textbook')">
+                📚<br><span>교과서</span>
+            </button>
+            <button class="action-btn" onclick="showScreen('screen-characters')">
+                👥<br><span>인물</span>
+            </button>
+            <button class="action-btn" onclick="showScreen('screen-debate')">
+                💬<br><span>토론</span>
+            </button>
+            <button class="action-btn" onclick="showScreen('screen-test')">
+                📝<br><span>시험</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- B. 교과서 보기 화면 -->
+    <div id="screen-textbook" class="screen">
+        <header class="app-header">
+            <button class="back-btn" onclick="showScreen('screen-main-map')">←</button>
+            <h1 class="app-title">교과서 보기</h1>
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        </header>
+
+        <div class="split-view">
+            <!-- 왼쪽: 지도 -->
+            <div class="split-left">
+                <div id="textbook-map" class="mini-map">
+                    <div class="map-canvas-mini">
+                        <p>지도 영역</p>
+                        <!-- 지도-교과서 하이라이트 연동 -->
+                        <div class="highlight-region" style="top: 35%; left: 40%; width: 20%; height: 15%;">
+                            <div class="pulse-marker"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 교과서 내용 -->
+            <div class="split-right">
+                <div class="textbook-toc">
+                    <h3>단원 목차</h3>
+                    <ul class="chapter-list">
+                        <li class="chapter-item active" onclick="loadChapter(1)">
+                            1. 삼국의 성립과 발전
+                        </li>
+                        <li class="chapter-item" onclick="loadChapter(2)">
+                            2. 남북국 시대
+                        </li>
+                        <li class="chapter-item" onclick="loadChapter(3)">
+                            3. 고려의 건국과 변천
+                        </li>
+                        <li class="chapter-item" onclick="loadChapter(4)">
+                            4. 조선의 성립과 발전
+                        </li>
+                        <li class="chapter-item" onclick="loadChapter(5)">
+                            5. 근대 국가 수립 운동
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="textbook-content">
+                    <h2>1. 삼국의 성립과 발전</h2>
+                    <div class="content-section">
+                        <h3>1-1. 삼국의 형성</h3>
+                        <p class="textbook-text">
+                            고구려, 백제, 신라는 한반도와 만주 지역에서 성장한 세 나라입니다. 
+                            고구려는 압록강 유역에서 시작하여 광개토대왕 시기에 크게 확장되었습니다.
+                        </p>
+                        <div class="textbook-image">
+                            <div class="image-placeholder">
+                                [삼국 영토 변화 지도]
+                            </div>
+                        </div>
+                        <p class="textbook-text highlight-text">
+                            475년 장수왕은 평양으로 수도를 옮기며 남진 정책을 강화했습니다.
+                        </p>
+                    </div>
+
+                    <div class="key-terms">
+                        <h4>핵심 용어</h4>
+                        <span class="term-badge">광개토대왕</span>
+                        <span class="term-badge">남진정책</span>
+                        <span class="term-badge">평양 천도</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- C. 인물 선택 화면 -->
+    <div id="screen-characters" class="screen">
+        <header class="app-header">
+            <button class="back-btn" onclick="showScreen('screen-main-map')">←</button>
+            <h1 class="app-title">역사 인물 만나기</h1>
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        </header>
+
+        <div class="character-filter">
+            <button class="filter-btn active" onclick="filterCharacters('all')">전체</button>
+            <button class="filter-btn" onclick="filterCharacters('삼국')">삼국시대</button>
+            <button class="filter-btn" onclick="filterCharacters('고려')">고려</button>
+            <button class="filter-btn" onclick="filterCharacters('조선')">조선</button>
+            <button class="filter-btn" onclick="filterCharacters('근대')">근대</button>
+        </div>
+
+        <div class="character-grid">
+            <div class="character-card" data-era="삼국" onclick="selectCharacter('광개토대왕')">
+                <div class="character-image">👑</div>
+                <h3 class="character-name">광개토대왕</h3>
+                <p class="character-info">고구려 19대 왕</p>
+                <span class="character-era">삼국시대</span>
+            </div>
+
+            <div class="character-card" data-era="삼국" onclick="selectCharacter('장수왕')">
+                <div class="character-image">🏛️</div>
+                <h3 class="character-name">장수왕</h3>
+                <p class="character-info">고구려 20대 왕</p>
+                <span class="character-era">삼국시대</span>
+            </div>
+
+            <div class="character-card" data-era="삼국" onclick="selectCharacter('김유신')">
+                <div class="character-image">⚔️</div>
+                <h3 class="character-name">김유신</h3>
+                <p class="character-info">신라 화랑 장군</p>
+                <span class="character-era">삼국시대</span>
+            </div>
+
+            <div class="character-card" data-era="고려" onclick="selectCharacter('왕건')">
+                <div class="character-image">👑</div>
+                <h3 class="character-name">왕건</h3>
+                <p class="character-info">고려 태조</p>
+                <span class="character-era">고려</span>
+            </div>
+
+            <div class="character-card" data-era="고려" onclick="selectCharacter('서희')">
+                <div class="character-image">📜</div>
+                <h3 class="character-name">서희</h3>
+                <p class="character-info">외교가</p>
+                <span class="character-era">고려</span>
+            </div>
+
+            <div class="character-card" data-era="조선" onclick="selectCharacter('이성계')">
+                <div class="character-image">👑</div>
+                <h3 class="character-name">이성계</h3>
+                <p class="character-info">조선 태조</p>
+                <span class="character-era">조선</span>
+            </div>
+
+            <div class="character-card" data-era="조선" onclick="selectCharacter('세종대왕')">
+                <div class="character-image">📖</div>
+                <h3 class="character-name">세종대왕</h3>
+                <p class="character-info">조선 4대 왕</p>
+                <span class="character-era">조선</span>
+            </div>
+
+            <div class="character-card" data-era="조선" onclick="selectCharacter('이순신')">
+                <div class="character-image">⚓</div>
+                <h3 class="character-name">이순신</h3>
+                <p class="character-info">조선 수군 장군</p>
+                <span class="character-era">조선</span>
+            </div>
+
+            <div class="character-card" data-era="조선" onclick="selectCharacter('정약용')">
+                <div class="character-image">📚</div>
+                <h3 class="character-name">정약용</h3>
+                <p class="character-info">실학자</p>
+                <span class="character-era">조선</span>
+            </div>
+
+            <div class="character-card" data-era="근대" onclick="selectCharacter('김구')">
+                <div class="character-image">🕊️</div>
+                <h3 class="character-name">김구</h3>
+                <p class="character-info">독립운동가</p>
+                <span class="character-era">근대</span>
+            </div>
+
+            <div class="character-card" data-era="근대" onclick="selectCharacter('안중근')">
+                <div class="character-image">✊</div>
+                <h3 class="character-name">안중근</h3>
+                <p class="character-info">독립운동가</p>
+                <span class="character-era">근대</span>
+            </div>
+
+            <div class="character-card" data-era="근대" onclick="selectCharacter('유관순')">
+                <div class="character-image">🌟</div>
+                <h3 class="character-name">유관순</h3>
+                <p class="character-info">독립운동가</p>
+                <span class="character-era">근대</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- D. 인물 대화 화면 -->
+    <div id="screen-chat" class="screen">
+        <header class="app-header">
+            <button class="back-btn" onclick="showScreen('screen-characters')">←</button>
+            <h1 class="app-title" id="chat-character-name">광개토대왕</h1>
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        </header>
+
+        <div class="chat-container">
+            <!-- 배경 지도 -->
+            <div class="chat-map-bg">
+                <div class="map-canvas-bg"></div>
+            </div>
+
+            <!-- 채팅 패널 -->
+            <div class="chat-panel">
+                <div class="character-profile">
+                    <div class="character-avatar">👑</div>
+                    <div class="character-intro">
+                        <h3>광개토대왕</h3>
+                        <p>고구려 19대 왕 (391-413)</p>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message character-message">
+                        <div class="message-bubble">
+                            <p>안녕하십니까. 나는 고구려 제19대 임금 광개토대왕이오. 
+                            내가 다스리던 시대에 대해 궁금한 점이 있으면 무엇이든 물어보시오.</p>
+                            <button class="tts-btn" onclick="speakMessage(this)">🔊</button>
+                        </div>
+                        <span class="message-time">오후 2:30</span>
+                    </div>
+
+                    <div class="message user-message">
+                        <div class="message-bubble">
+                            <p>고구려의 영토를 어떻게 확장하셨나요?</p>
+                        </div>
+                        <span class="message-time">오후 2:31</span>
+                    </div>
+
+                    <div class="message character-message">
+                        <div class="message-bubble">
+                            <p>나는 즉위 초부터 백제를 공격하여 한강 이북 지역을 차지하였소. 
+                            또한 만주 지역의 여러 부족을 복속시키고, 
+                            신라를 도와 왜구를 격퇴하였소. 
+                            이를 통해 고구려는 동아시아 최강국으로 성장하였소.</p>
+                            <button class="tts-btn" onclick="speakMessage(this)">🔊</button>
+                        </div>
+                        <span class="message-time">오후 2:31</span>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <input type="text" 
+                           class="chat-input" 
+                           id="chat-input" 
+                           placeholder="질문을 입력하세요..."
+                           onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button class="send-btn" onclick="sendMessage()">📤</button>
+                </div>
+
+                <div class="suggested-questions">
+                    <button class="suggestion-btn" onclick="askQuestion('광개토대왕릉비에 대해 알려주세요')">
+                        💡 광개토대왕릉비에 대해
+                    </button>
+                    <button class="suggestion-btn" onclick="askQuestion('당시 백제와의 관계는 어땠나요?')">
+                        💡 백제와의 관계
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- E. 토론: 찬반 선택 화면 -->
+    <div id="screen-debate" class="screen">
+        <header class="app-header">
+            <button class="back-btn" onclick="showScreen('screen-main-map')">←</button>
+            <h1 class="app-title">역사 토론</h1>
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        </header>
+
+        <div class="debate-topic">
+            <h2 class="topic-title">토론 주제</h2>
+            <p class="topic-question">
+                "세종대왕의 한글 창제는 백성을 위한 것이었을까, 
+                왕권 강화를 위한 것이었을까?"
+            </p>
+            <div class="debate-timer">
+                <span class="timer-label">토론 시간</span>
+                <span class="timer-display" id="debate-timer">10:00</span>
+            </div>
+        </div>
+
+        <div class="debate-choice">
+            <div class="choice-panel yes-panel" onclick="selectDebateSide('yes')">
+                <div class="choice-icon">✅</div>
+                <h3 class="choice-title">찬성</h3>
+                <p class="choice-desc">백성을 위한 것이다</p>
+                <div class="participant-count">
+                    <span>👥 42명</span>
+                </div>
+            </div>
+
+            <div class="choice-panel no-panel" onclick="selectDebateSide('no')">
+                <div class="choice-icon">❌</div>
+                <h3 class="choice-title">반대</h3>
+                <p class="choice-desc">왕권 강화를 위한 것이다</p>
+                <div class="participant-count">
+                    <span>👥 38명</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="debate-info">
+            <h4>토론 규칙</h4>
+            <ul>
+                <li>각자의 의견을 존중합니다</li>
+                <li>근거를 제시하며 토론합니다</li>
+                <li>상대방의 의견에 반박할 수 있습니다</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- F. 토론: 의견 제출 UI -->
+    <div id="screen-debate-chat" class="screen">
+        <header class="app-header">
+            <button class="back-btn" onclick="showScreen('screen-debate')">←</button>
+            <h1 class="app-title">토론 중 (찬성)</h1>
+            <div class="timer-display-small" id="debate-timer-small">10:00</div>
+        </header>
+
+        <div class="debate-chat-container">
+            <div class="debate-sides">
+                <!-- 찬성 측 -->
+                <div class="debate-side agree-side">
+                    <h3 class="side-title">✅ 찬성 (백성을 위한 것)</h3>
+                    <div class="debate-messages" id="agree-messages">
+                        <div class="debate-message">
+                            <div class="message-header">
+                                <span class="user-name">김역사</span>
+                                <span class="message-time">2분 전</span>
+                            </div>
+                            <div class="message-content">
+                                훈민정음 서문에 "나라 말이 중국과 달라... 
+                                백성이 말하고자 하는 바가 있어도 제 뜻을 펴지 못하는 사람이 많다"고 
+                                명시되어 있습니다. 백성을 위한 것이 명확합니다.
+                            </div>
+                            <div class="message-actions">
+                                <button class="action-icon" onclick="agreeMessage(this)">
+                                    👍 <span class="count">12</span>
+                                </button>
+                                <button class="action-icon" onclick="replyMessage(this)">
+                                    💬 <span class="count">3</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="debate-message">
+                            <div class="message-header">
+                                <span class="user-name">역사탐구</span>
+                                <span class="message-time">1분 전</span>
+                            </div>
+                            <div class="message-content">
+                                당시 양반들이 한글 창제를 반대한 것도 
+                                백성을 위한 것이라는 증거입니다.
+                            </div>
+                            <div class="message-actions">
+                                <button class="action-icon" onclick="agreeMessage(this)">
+                                    👍 <span class="count">8</span>
+                                </button>
+                                <button class="action-icon" onclick="replyMessage(this)">
+                                    💬 <span class="count">2</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 반대 측 -->
+                <div class="debate-side disagree-side">
+                    <h3 class="side-title">❌ 반대 (왕권 강화를 위한 것)</h3>
+                    <div class="debate-messages" id="disagree-messages">
+                        <div class="debate-message">
+                            <div class="message-header">
+                                <span class="user-name">박토론</span>
+                                <span class="message-time">3분 전</span>
+                            </div>
+                            <div class="message-content">
+                                한글 창제로 왕이 직접 백성과 소통할 수 있게 되어 
+                                양반의 중재 없이도 통치가 가능해졌습니다. 
+                                이는 왕권 강화의 수단이었습니다.
+                            </div>
+                            <div class="message-actions">
+                                <button class="action-icon" onclick="agreeMessage(this)">
+                                    👍 <span class="count">10</span>
+                                </button>
+                                <button class="action-icon" onclick="replyMessage(this)">
+                                    💬 <span class="count">5</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="debate-message">
+                            <div class="message-header">
+                                <span class="user-name">이분석</span>
+                                <span class="message-time">방금</span>
+                            </div>
+                            <div class="message-content">
+                                실제로 한글은 궁궐 내에서 먼저 사용되었고, 
+                                법령 전달에 활용되었습니다.
+                            </div>
+                            <div class="message-actions">
+                                <button class="action-icon" onclick="agreeMessage(this)">
+                                    👍 <span class="count">7</span>
+                                </button>
+                                <button class="action-icon" onclick="replyMessage(this)">
+                                    💬 <span class="count">1</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 의견 입력 영역 -->
+            <div class="debate-input-area">
+                <input type="text" 
+                       class="debate-input" 
+                       id="debate-input" 
+                       placeholder="찬성 의견을 작성하세요..."
+                       onkeypress="if(event.key==='Enter') sendDebateMessage()">
+                <button class="send-btn-large" onclick="sendDebateMessage()">
+                    의견 제출
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- G. 퀘스트 / 테스트 화면 -->
+    <div id="screen-test" class="screen">
+        <header class="app-header">
+            <button class="back-btn" onclick="showScreen('screen-main-map')">←</button>
+            <h1 class="app-title">역사 퀘스트</h1>
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        </header>
+
+        <div class="test-container">
+            <div class="test-progress">
+                <span class="progress-text">문제 3 / 10</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 30%"></div>
+                </div>
+            </div>
+
+            <div class="question-card">
+                <div class="question-header">
+                    <span class="question-type">객관식</span>
+                    <span class="question-points">10점</span>
+                </div>
+
+                <h3 class="question-text">
+                    다음 중 광개토대왕의 업적이 아닌 것은?
+                </h3>
+
+                <div class="question-options">
+                    <button class="option-btn" onclick="selectOption(this, 1)">
+                        <span class="option-number">①</span>
+                        <span class="option-text">만주 지역 확장</span>
+                    </button>
+                    <button class="option-btn" onclick="selectOption(this, 2)">
+                        <span class="option-number">②</span>
+                        <span class="option-text">신라 구원</span>
+                    </button>
+                    <button class="option-btn" onclick="selectOption(this, 3)">
+                        <span class="option-number">③</span>
+                        <span class="option-text">평양 천도</span>
+                    </button>
+                    <button class="option-btn" onclick="selectOption(this, 4)">
+                        <span class="option-number">④</span>
+                        <span class="option-text">백제 공격</span>
+                    </button>
+                </div>
+
+                <button class="submit-answer-btn" onclick="submitAnswer(3)">
+                    정답 제출
+                </button>
+            </div>
+
+            <!-- 정답 해설 (정답 제출 후 표시) -->
+            <div class="answer-explanation" id="answer-explanation" style="display: none;">
+                <div class="result-header correct">
+                    <span class="result-icon">✅</span>
+                    <span class="result-text">정답입니다!</span>
+                </div>
+                <div class="explanation-content">
+                    <h4>해설</h4>
+                    <p>
+                        평양 천도는 광개토대왕의 아들인 <strong>장수왕</strong>의 업적입니다. 
+                        장수왕은 427년에 국내성에서 평양으로 수도를 옮겨 
+                        남진 정책을 본격적으로 추진했습니다.
+                    </p>
+                    <p>
+                        광개토대왕(391-413)은 만주 지역을 크게 확장하고, 
+                        신라를 도와 왜구를 격퇴했으며, 백제를 공격하여 영토를 넓혔습니다.
+                    </p>
+                </div>
+                <button class="next-question-btn" onclick="nextQuestion()">
+                    다음 문제
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- H. 시험 대비 화면 -->
+    <div id="screen-exam-prep" class="screen">
+        <header class="app-header">
+            <button class="back-btn" onclick="showScreen('screen-main-map')">←</button>
+            <h1 class="app-title">시험 대비</h1>
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        </header>
+
+        <div class="exam-prep-container">
+            <!-- 탭 메뉴 -->
+            <div class="tab-menu">
+                <button class="tab-btn active" onclick="switchTab('summary')">
+                    📋 핵심 정리
+                </button>
+                <button class="tab-btn" onclick="switchTab('practice')">
+                    📝 문제 풀이
+                </button>
+            </div>
+
+            <!-- 핵심 정리 탭 -->
+            <div id="tab-summary" class="tab-content active">
+                <div class="unit-selector">
+                    <label>단원 선택</label>
+                    <select class="unit-select" onchange="loadUnitSummary(this.value)">
+                        <option value="1">1. 삼국의 성립과 발전</option>
+                        <option value="2">2. 남북국 시대</option>
+                        <option value="3">3. 고려의 건국과 변천</option>
+                        <option value="4">4. 조선의 성립과 발전</option>
+                        <option value="5">5. 근대 국가 수립 운동</option>
+                    </select>
+                </div>
+
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <h3 class="card-title">🏛️ 주요 사건</h3>
+                        <ul class="card-list">
+                            <li>
+                                <strong>475년</strong> - 장수왕, 평양 천도
+                            </li>
+                            <li>
+                                <strong>660년</strong> - 백제 멸망 (나당연합군)
+                            </li>
+                            <li>
+                                <strong>668년</strong> - 고구려 멸망
+                            </li>
+                            <li>
+                                <strong>676년</strong> - 신라, 삼국 통일
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="summary-card">
+                        <h3 class="card-title">👥 주요 인물</h3>
+                        <ul class="card-list">
+                            <li>
+                                <strong>광개토대왕</strong> - 고구려 최대 영토 확장
+                            </li>
+                            <li>
+                                <strong>장수왕</strong> - 평양 천도, 남진 정책
+                            </li>
+                            <li>
+                                <strong>김유신</strong> - 나당연합군 총사령관
+                            </li>
+                            <li>
+                                <strong>문무왕</strong> - 삼국 통일 완성
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="summary-card">
+                        <h3 class="card-title">📍 핵심 개념</h3>
+                        <ul class="card-list">
+                            <li>
+                                <strong>남진정책</strong> - 고구려의 남쪽 진출 정책
+                            </li>
+                            <li>
+                                <strong>나당연합</strong> - 신라와 당의 동맹
+                            </li>
+                            <li>
+                                <strong>매소성 전투</strong> - 신라가 당군을 격퇴
+                            </li>
+                            <li>
+                                <strong>삼국통일</strong> - 676년 신라의 한반도 통일
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="summary-card">
+                        <h3 class="card-title">⚠️ 주의사항</h3>
+                        <ul class="card-list warning-list">
+                            <li>평양 천도는 <strong>장수왕</strong>의 업적 (광개토대왕 ❌)</li>
+                            <li>삼국통일 시기: <strong>676년</strong> (660년, 668년 ❌)</li>
+                            <li>신라는 당을 물리치고 자주적 통일 완성</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 문제 풀이 탭 -->
+            <div id="tab-practice" class="tab-content">
+                <div class="practice-options">
+                    <button class="practice-mode-btn" onclick="startPractice('random')">
+                        🎲 랜덤 문제 (20문제)
+                    </button>
+                    <button class="practice-mode-btn" onclick="startPractice('weak')">
+                        ⚡ 취약 유형 집중
+                    </button>
+                    <button class="practice-mode-btn" onclick="startPractice('timed')">
+                        ⏰ 실전 모의고사 (40분)
+                    </button>
+                </div>
+
+                <div class="practice-history">
+                    <h3>최근 학습 기록</h3>
+                    <div class="history-item">
+                        <div class="history-info">
+                            <span class="history-date">2024.11.19</span>
+                            <span class="history-title">삼국시대 종합 문제</span>
+                        </div>
+                        <div class="history-score">
+                            <span class="score-value">85점</span>
+                            <span class="score-change up">+5</span>
+                        </div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-info">
+                            <span class="history-date">2024.11.18</span>
+                            <span class="history-title">고구려 왕 구분 문제</span>
+                        </div>
+                        <div class="history-score">
+                            <span class="score-value">92점</span>
+                            <span class="score-change up">+12</span>
+                        </div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-info">
+                            <span class="history-date">2024.11.17</span>
+                            <span class="history-title">삼국통일 과정</span>
+                        </div>
+                        <div class="history-score">
+                            <span class="score-value">78점</span>
+                            <span class="score-change down">-3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- I. 사이드 메뉴 (햄버거 메뉴) -->
+    <div id="side-menu" class="side-menu">
+        <div class="menu-header">
+            <h2>메뉴</h2>
+            <button class="close-menu-btn" onclick="toggleMenu()">✕</button>
+        </div>
+
+        <nav class="menu-nav">
+            <a href="#" class="menu-item" onclick="showScreen('screen-textbook'); toggleMenu();">
+                <span class="menu-icon">📚</span>
+                <span class="menu-text">교과서 보기</span>
+            </a>
+            <a href="#" class="menu-item" onclick="showScreen('screen-characters'); toggleMenu();">
+                <span class="menu-icon">👥</span>
+                <span class="menu-text">인물 만나기</span>
+            </a>
+            <a href="#" class="menu-item" onclick="showScreen('screen-debate'); toggleMenu();">
+                <span class="menu-icon">💬</span>
+                <span class="menu-text">토론하기</span>
+            </a>
+            <a href="#" class="menu-item" onclick="showScreen('screen-test'); toggleMenu();">
+                <span class="menu-icon">🎮</span>
+                <span class="menu-text">역사 퀘스트</span>
+            </a>
+            <a href="#" class="menu-item" onclick="showScreen('screen-exam-prep'); toggleMenu();">
+                <span class="menu-icon">📝</span>
+                <span class="menu-text">시험 대비</span>
+            </a>
+            <div class="menu-divider"></div>
+            <a href="#" class="menu-item" onclick="showScreen('screen-settings'); toggleMenu();">
+                <span class="menu-icon">⚙️</span>
+                <span class="menu-text">설정</span>
+            </a>
+            <a href="#" class="menu-item" onclick="showScreen('screen-login'); toggleMenu();">
+                <span class="menu-icon">👤</span>
+                <span class="menu-text">로그인 / 로그아웃</span>
+            </a>
+        </nav>
+
+        <div class="menu-footer">
+            <p class="app-version">버전 1.0.0</p>
+        </div>
+    </div>
+
+    <!-- 메뉴 오버레이 -->
+    <div id="menu-overlay" class="menu-overlay" onclick="toggleMenu()"></div>
+
+    <script src="scripts/app.js"></script>
+</body>
+</html>
