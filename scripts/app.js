@@ -3442,10 +3442,152 @@ function toggleDrawPanel() {
     }
 }
 
-// 그리기 도구 활성화 (기본 구현)
-function activateDrawTool(tool) {
-    console.log(`그리기 도구 활성화: ${tool}`);
+// 지우개 관련 변수
+let isEraserActive = false;
+let eraserBrush = null;
+const ERASER_RADIUS = 20; // 지우개 반경 (픽셀)
+
+// 지우개 활성화
+function activateEraser() {
+    isEraserActive = true;
+    map.dragging.disable(); // 드래그 방지
+
+    // 커서 변경 (없음으로 설정하고 커스텀 브러시 사용)
+    map.getContainer().style.cursor = 'none';
+
+    // 지우개 브러시 생성
+    if (!eraserBrush) {
+        eraserBrush = document.createElement('div');
+        eraserBrush.className = 'eraser-brush';
+        eraserBrush.style.width = (ERASER_RADIUS * 2) + 'px';
+        eraserBrush.style.height = (ERASER_RADIUS * 2) + 'px';
+        eraserBrush.style.border = '2px solid #ef4444';
+        eraserBrush.style.borderRadius = '50%';
+        eraserBrush.style.position = 'fixed';
+        eraserBrush.style.pointerEvents = 'none'; // 클릭 통과
+        eraserBrush.style.zIndex = '9999';
+        eraserBrush.style.transform = 'translate(-50%, -50%)';
+        eraserBrush.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+        document.body.appendChild(eraserBrush);
+    }
+    eraserBrush.style.display = 'block';
+
+    // 이벤트 리스너 등록
+    map.on('mousemove', onEraserMove);
+    map.on('mousedown', onEraserDown);
+    document.addEventListener('mouseup', onEraserUp);
 }
+
+// 지우개 비활성화
+function deactivateEraser() {
+    isEraserActive = false;
+    map.dragging.enable();
+    map.getContainer().style.cursor = '';
+
+    if (eraserBrush) {
+        eraserBrush.style.display = 'none';
+    }
+
+    map.off('mousemove', onEraserMove);
+    map.off('mousedown', onEraserDown);
+    document.removeEventListener('mouseup', onEraserUp);
+}
+
+let isErasing = false;
+
+function onEraserDown(e) {
+    isErasing = true;
+    eraseAtPoint(e.containerPoint);
+}
+
+function onEraserUp() {
+    isErasing = false;
+}
+
+function onEraserMove(e) {
+    // 브러시 위치 업데이트
+    if (eraserBrush) {
+        eraserBrush.style.left = e.containerPoint.x + map.getContainer().getBoundingClientRect().left + 'px';
+        eraserBrush.style.top = e.containerPoint.y + map.getContainer().getBoundingClientRect().top + 'px';
+    }
+
+    if (isErasing) {
+        eraseAtPoint(e.containerPoint);
+    }
+}
+
+// 지우개 로직 (벡터 자르기)
+function eraseAtPoint(point) {
+    if (!drawnItems) return;
+
+    const layersToRemove = [];
+    const layersToAdd = [];
+
+    drawnItems.eachLayer(function (layer) {
+        // 자유 그리기 선(Polyline)만 대상
+        if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
+            const latlngs = layer.getLatLngs();
+            if (!latlngs || latlngs.length < 2) return;
+
+            // 화면 좌표로 변환
+            const points = latlngs.map(ll => map.latLngToContainerPoint(ll));
+
+            // 지우개 범위 내에 있는 점 찾기
+            let hasIntersection = false;
+            const segments = [];
+            let currentSegment = [];
+
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const dist = p.distanceTo(point);
+
+                if (dist <= ERASER_RADIUS) {
+                    // 지워지는 점
+                    hasIntersection = true;
+                    if (currentSegment.length > 0) {
+                        segments.push(currentSegment);
+                        currentSegment = [];
+                    }
+                } else {
+                    // 남는 점
+                    currentSegment.push(latlngs[i]);
+                }
+            }
+
+            // 마지막 세그먼트 추가
+            if (currentSegment.length > 0) {
+                segments.push(currentSegment);
+            }
+
+            // 변경사항이 있으면 적용
+            if (hasIntersection) {
+                layersToRemove.push(layer);
+
+                segments.forEach(seg => {
+                    if (seg.length >= 2) { // 점 2개 이상이어야 선이 됨
+                        const newPolyline = L.polyline(seg, {
+                            color: layer.options.color,
+                            weight: layer.options.weight,
+                            opacity: layer.options.opacity,
+                            pane: 'drawPane'
+                        });
+                        newPolyline.layerType = 'freehand'; // 타입 유지
+                        layersToAdd.push(newPolyline);
+                    }
+                });
+            }
+        }
+    });
+
+    // 레이어 업데이트
+    if (layersToRemove.length > 0) {
+        layersToRemove.forEach(l => drawnItems.removeLayer(l));
+        layersToAdd.forEach(l => drawnItems.addLayer(l));
+        saveDrawings(); // 저장
+    }
+}
+
+
 
 function activateEditMode() {
     console.log('편집 모드 활성화');
@@ -3620,30 +3762,6 @@ function copyGeoJSONToClipboard() {
     });
 }
 
-// 미리보기
-function previewGeoJSON() {
-    const geojson = convertDrawnItemsToGeoJSON();
-
-    if (!geojson || geojson.features.length === 0) {
-        alert('먼저 지도에 영역을 그려주세요!');
-        return;
-    }
-
-    const modal = document.getElementById('geojson-modal');
-    const preview = document.getElementById('geojson-preview');
-
-    preview.textContent = JSON.stringify(geojson, null, 2);
-    modal.style.display = 'flex';
-}
-
-// 모달 닫기
-function closeGeoJSONModal() {
-    document.getElementById('geojson-modal').style.display = 'none';
-}
-
-// ===================================
-// 초기화
-// ===================================
 document.addEventListener('DOMContentLoaded', function () {
     // AI 설정 로드
     loadAIConfig();
@@ -3761,6 +3879,10 @@ function toggleDrawPanel() {
         if (isFreehandDrawing) {
             deactivateFreehand();
         }
+        // 지우개 모드 비활성화
+        if (isEraserActive) {
+            deactivateEraser();
+        }
         // 모든 버튼 비활성화
         document.querySelectorAll('.draw-tool-btn').forEach(b => b.classList.remove('active'));
     } else {
@@ -3780,12 +3902,24 @@ function activateDrawTool(type) {
         deactivateFreehand();
     }
 
+    // 지우개 모드 비활성화
+    if (isEraserActive) {
+        deactivateEraser();
+    }
+
     // 모든 버튼 비활성화
     document.querySelectorAll('.draw-tool-btn').forEach(btn => btn.classList.remove('active'));
 
     // 자유 그리기 모드
     if (type === 'freehand') {
         activateFreehand();
+        event.target.classList.add('active');
+        return;
+    }
+
+    // 지우개 모드
+    if (type === 'eraser') {
+        activateEraser();
         event.target.classList.add('active');
         return;
     }
@@ -3968,14 +4102,23 @@ function onFreehandMouseUp(e) {
 }
 
 // 자유 그리기 경로 부드럽게 만들기
+// 자유 그리기 경로 부드럽게 만들기 (지우개를 위해 포인트 밀도 유지)
 function smoothFreehandPath(path) {
     if (path.length < 3) return path;
 
-    const smoothed = [];
-    const step = Math.max(1, Math.floor(path.length / 50)); // 최대 50개 점으로 줄이기
+    const smoothed = [path[0]];
+    let lastPoint = path[0];
 
-    for (let i = 0; i < path.length; i += step) {
-        smoothed.push(path[i]);
+    // 픽셀 거리 기반으로 포인트 필터링 (너무 촘촘하지 않게, 하지만 지우개가 먹힐 정도로는 유지)
+    for (let i = 1; i < path.length; i++) {
+        const point = path[i];
+        const dist = map.latLngToContainerPoint(lastPoint).distanceTo(map.latLngToContainerPoint(point));
+
+        // 2픽셀 이상 이동했을 때만 포인트 추가 (부드러움과 데이터 양의 균형)
+        if (dist > 2) {
+            smoothed.push(point);
+            lastPoint = point;
+        }
     }
 
     // 마지막 점 추가
@@ -4897,5 +5040,59 @@ function updateTimelineHandle(year) {
 
         handle.style.left = `${percent}%`;
         label.textContent = safeYear < 0 ? `BC ${Math.abs(safeYear)}` : safeYear;
+    }
+}
+
+
+function previewGeoJSON() {
+    try {
+        console.log('previewGeoJSON called');
+        // 기존 유틸리티 함수 사용
+        const data = convertDrawnItemsToGeoJSON();
+        console.log('GeoJSON data converted:', data);
+
+        if (!data || data.features.length === 0) {
+            alert('먼저 지도에 영역을 그려주세요!');
+            return;
+        }
+
+        const jsonStr = JSON.stringify(data, null, 2);
+
+        const preview = document.getElementById('geojson-preview');
+        const modal = document.getElementById('geojson-modal');
+
+        console.log('Modal elements:', { preview, modal });
+
+        if (preview && modal) {
+            preview.textContent = jsonStr;
+            modal.style.display = 'flex';
+            console.log('Modal displayed');
+        } else {
+            console.error('GeoJSON 모달 요소를 찾을 수 없습니다.');
+            alert('오류: GeoJSON 모달 요소를 찾을 수 없습니다.');
+        }
+    } catch (error) {
+        console.error('GeoJSON 미리보기 오류:', error);
+        alert('미리보기 중 오류가 발생했습니다: ' + error.message);
+    }
+}
+
+function closeGeoJSONModal() {
+    const modal = document.getElementById('geojson-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function copyGeoJSONToClipboard() {
+    const preview = document.getElementById('geojson-preview');
+    if (preview) {
+        const text = preview.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('GeoJSON이 클립보드에 복사되었습니다!');
+        }).catch(err => {
+            console.error('복사 실패:', err);
+            alert('복사에 실패했습니다.');
+        });
     }
 }
