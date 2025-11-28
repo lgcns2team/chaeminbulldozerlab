@@ -1,8 +1,8 @@
 // ===================================
 // 전역 변수
 // ===================================
-let currentYear = 475;
-let currentEra = '삼국시대';
+let currentYear = -1300;
+let currentEra = '고조선';
 let currentScreen = 'screen-main-map';
 let debateTimer = 600; // 10분 = 600초
 let debateInterval = null;
@@ -28,7 +28,7 @@ let freehandPath = []; // 자유 그리기 경로
 let freehandPolyline = null; // 자유 그리기 임시 선
 
 // 시대 줌 관련 변수
-let currentEraIndex = 2; // 기본값: 삼국시대 (475년)
+let currentEraIndex = 0; // 기본값: 고조선 (-1300년)
 let isEraTransitioning = false; // 시대 전환 애니메이션 중
 
 // 교과서 뷰어 전역 변수
@@ -777,6 +777,15 @@ function initMap() {
 
 // 역사 지도 데이터 로드
 function loadHistoricalMap(year) {
+    // BC 1300년(고조선)일 경우 지도 데이터 표시 안 함 (그리기 모드)
+    if (year === -1300) {
+        if (historicalLayer) {
+            map.removeLayer(historicalLayer);
+            historicalLayer = null;
+        }
+        return;
+    }
+
     // 연도에 맞는 GeoJSON 파일 선택
     let geojsonFile = getGeojsonFileForYear(year);
 
@@ -1028,6 +1037,21 @@ function addDefaultMarkers() {
 
 // 시대별 수도 마커 업데이트
 function updateCapitalMarkers(year) {
+    // BC 1300년(고조선)일 경우 마커 표시 안 함
+    if (year === -1300) {
+        if (capitalMarkers && capitalMarkers.length > 0) {
+            capitalMarkers.forEach(marker => {
+                try {
+                    map.removeLayer(marker);
+                } catch (e) {
+                    console.log('마커 제거 중 오류:', e);
+                }
+            });
+            capitalMarkers = [];
+        }
+        return;
+    }
+
     // 해당 시대 찾기
     let periodKey = getCapitalPeriod(year);
     let capitals = capitalData[periodKey];
@@ -1082,9 +1106,6 @@ function updateCapitalMarkers(year) {
         newMarkers.push(marker);
     });
 
-    // 새 마커 먼저 추가
-    newMarkers.forEach(marker => marker.addTo(map));
-
     // 기존 마커 제거
     if (capitalMarkers && capitalMarkers.length > 0) {
         capitalMarkers.forEach(marker => {
@@ -1095,6 +1116,9 @@ function updateCapitalMarkers(year) {
             }
         });
     }
+
+    // 새 마커 먼저 추가
+    newMarkers.forEach(marker => marker.addTo(map));
 
     // 새 마커를 현재 마커로 설정
     capitalMarkers = newMarkers;
