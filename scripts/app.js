@@ -3599,8 +3599,217 @@ function onFreehandMouseUp(e) {
     
     saveDrawings();
     
-    // 경로 초기화
+    // 자유 그리기 모드 해제
     freehandPath = [];
+}
+
+// 전체 그리기 데이터 내보내기 함수
+function exportAllDrawings() {
+    if (!drawnItems) {
+        alert('그려진 데이터가 없습니다.');
+        return;
+    }
+    
+    const features = [];
+    
+    // drawnItems의 모든 레이어를 GeoJSON으로 변환
+    drawnItems.eachLayer(function(layer) {
+        let geojson;
+        
+        // Polyline이나 Polygon 처리
+        if (layer instanceof L.Polyline || layer instanceof L.Polygon) {
+            geojson = layer.toGeoJSON();
+            geojson.properties = geojson.properties || {};
+            geojson.properties.style = {
+                color: layer.options.color || '#3b82f6',
+                weight: layer.options.weight || 3,
+                fillOpacity: layer.options.fillOpacity || 0,
+                opacity: layer.options.opacity || 1
+            };
+            if (layer.layerType === 'freehand') {
+                geojson.properties.shapeType = 'freehand';
+            }
+        } 
+        // Circle 처리
+        else if (layer instanceof L.Circle) {
+            const center = layer.getLatLng();
+            const radius = layer.getRadius();
+            geojson = {
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [center.lng, center.lat]
+                },
+                properties: {
+                    radius: radius,
+                    style: {
+                        color: layer.options.color || '#10b981',
+                        fillOpacity: layer.options.fillOpacity || 0.3
+                    },
+                    shapeType: 'circle'
+                }
+            };
+        }
+        // Marker 처리
+        else if (layer instanceof L.Marker) {
+            geojson = layer.toGeoJSON();
+            geojson.properties = geojson.properties || {};
+            geojson.properties.shapeType = 'marker';
+        }
+        // Rectangle 등 기타
+        else {
+            geojson = layer.toGeoJSON();
+            geojson.properties = geojson.properties || {};
+            geojson.properties.style = {
+                color: layer.options.color || '#f59e0b',
+                weight: layer.options.weight || 2,
+                fillOpacity: layer.options.fillOpacity || 0.3
+            };
+        }
+        
+        features.push(geojson);
+    });
+    
+    if (features.length === 0) {
+        alert('내보낼 데이터가 없습니다.');
+        return;
+    }
+    
+    // FeatureCollection 생성
+    const geojson = {
+        type: 'FeatureCollection',
+        features: features
+    };
+    
+    // JSON 파일로 다운로드
+    const dataStr = JSON.stringify(geojson, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `map_drawings_${new Date().getTime()}.geojson`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert(`${features.length}개의 도형이 GeoJSON 파일로 내보내졌습니다.`);
+}
+
+// 수도 데이터 내보내기 함수 (마커만 Point 타입으로)
+function exportCapitalMarkers() {
+    if (!drawnItems) {
+        alert('그려진 마커가 없습니다.');
+        return;
+    }
+    
+    // 먼저 마커 개수 확인
+    let totalMarkers = 0;
+    drawnItems.eachLayer(function(layer) {
+        if (layer instanceof L.Marker) {
+            totalMarkers++;
+        }
+    });
+    
+    if (totalMarkers === 0) {
+        alert('내보낼 마커가 없습니다. 마커를 먼저 추가해주세요.');
+        return;
+    }
+    
+    // 사용자에게 안내
+    if (!confirm(`${totalMarkers}개의 마커가 있습니다.\n각 마커의 수도 이름과 설명을 입력해주세요.\n\n계속하시겠습니까?`)) {
+        return;
+    }
+    
+    const features = [];
+    let markerCount = 0;
+    let cancelled = false;
+    
+    // drawnItems에서 마커만 필터링하고 정보 입력받기
+    drawnItems.eachLayer(function(layer) {
+        // 마커인지 확인
+        if (layer instanceof L.Marker && !cancelled) {
+            markerCount++;
+            const latlng = layer.getLatLng();
+            
+            // 수도 이름 입력 받기
+            let capitalName = prompt(
+                `[${markerCount}/${totalMarkers}] 수도 이름을 입력하세요:\n\n좌표: (${latlng.lat.toFixed(2)}, ${latlng.lng.toFixed(2)})`,
+                `수도${markerCount}`
+            );
+            
+            // 취소 시 전체 작업 중단
+            if (capitalName === null) {
+                cancelled = true;
+                return;
+            }
+            
+            // 빈 값이면 기본값 사용
+            if (!capitalName.trim()) {
+                capitalName = `수도${markerCount}`;
+            }
+            
+            // 설명 입력 받기
+            let description = prompt(
+                `[${markerCount}/${totalMarkers}] "${capitalName}"의 설명을 입력하세요:\n(선택사항 - 취소하면 기본 설명 사용)`,
+                ''
+            );
+            
+            // 취소하면 기본 설명 사용
+            if (description === null) {
+                description = `${capitalName}의 위치`;
+            } else if (!description.trim()) {
+                description = `${capitalName}의 위치`;
+            }
+            
+            // Point 타입의 GeoJSON Feature 생성
+            const feature = {
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [parseFloat(latlng.lng.toFixed(2)), parseFloat(latlng.lat.toFixed(2))]
+                },
+                properties: {
+                    name: capitalName.trim(),
+                    type: 'capital',
+                    description: description.trim()
+                }
+            };
+            
+            features.push(feature);
+        }
+    });
+    
+    // 취소된 경우
+    if (cancelled) {
+        alert('내보내기가 취소되었습니다.');
+        return;
+    }
+    
+    if (features.length === 0) {
+        alert('내보낼 데이터가 없습니다.');
+        return;
+    }
+    
+    // FeatureCollection 생성
+    const geojson = {
+        type: 'FeatureCollection',
+        features: features
+    };
+    
+    // JSON 파일로 다운로드
+    const dataStr = JSON.stringify(geojson, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `capital_markers_${new Date().getTime()}.geojson`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert(`✅ ${features.length}개의 수도 마커가 GeoJSON 파일로 내보내졌습니다!`);
 }
 
 // 자유 그리기 경로 부드럽게 만들기
