@@ -49,6 +49,31 @@
                 </button>
             </div>
 
+            <!-- 년도 입력 컨트롤 (오른쪽 위) -->
+            <div class="year-input-control">
+                <input type="number" 
+                       id="year-input-box" 
+                       placeholder="년도 입력" 
+                       min="-108" 
+                       max="2024"
+                       onkeypress="if(event.key === 'Enter') jumpToYear()">
+                <button onclick="jumpToYear()" title="해당 년도로 이동">→</button>
+            </div>
+
+            <!-- 타임라인 컨트롤 -->
+            <div class="timeline-control">
+                <div class="timeline-wrapper" id="timeline-wrapper">
+                    <div class="timeline-container" id="timeline-container">
+                        <div class="timeline-eras" id="timeline-eras"></div>
+                        <div class="timeline-axis" id="timeline-axis"></div>
+                        <div class="timeline-handle" id="timeline-handle">
+                            <div id="handle-label" style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap;">900</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-era-name" id="timeline-era-name">고려 시대 (900-1100)</div>
+            </div>
+
             <!-- 메모 버튼 (왼쪽 아래) -->
             <button class="memo-toggle-btn" id="draw-panel-btn" title="지도 메모">
                 ✏️

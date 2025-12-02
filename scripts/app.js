@@ -197,176 +197,212 @@ const capitalData = {
     ]
 };
 
+// 전쟁 정의 (각 전쟁의 기간)
+const WARS = {
+    'WAR_TK': { name: '후삼국 통일전쟁', startYear: 927, endYear: 936 },
+    'WAR_KH': { name: '거란 침입', startYear: 993, endYear: 1019 },
+    'WAR_JR': { name: '여진 정벌', startYear: 1107, endYear: 1107 },
+    'WAR_MG': { name: '몽골 침입', startYear: 1231, endYear: 1270 },
+    'WAR_RB': { name: '홍건적의 난', startYear: 1362, endYear: 1362 },
+    'WAR_JP': { name: '왜구 격퇴전', startYear: 1380, endYear: 1380 }
+};
+
 // 역사적 전투 데이터
 const battleData = {
-    '0_300': [
-        { name: '적벽대전', year: 208, lat: 30.2, lng: 113.9, participants: ['조조', '손권', '유비'], outcome: '손유연합 승리' }
-    ],
-    '300_500': [
-        { name: '비수대전', year: 383, lat: 33.0, lng: 117.0, participants: ['동진', '전진'], outcome: '동진 승리' },
-        { name: '평양성 전투', year: 427, lat: 39.0, lng: 125.7, participants: ['고구려', '북연'], outcome: '고구려 승리' },
-        {
-            name: '관미성 전투', year: 475, lat: 37.4, lng: 127.1, participants: ['고구려', '백제'], outcome: '고구려 승리',
-            troops: { attacker: { name: '고구려군', from: { lat: 39.0, lng: 125.7 }, to: { lat: 37.4, lng: 127.1 } } }
-        }
-    ],
-    '500_700': [
-        {
-            name: '살수대첩', year: 612, lat: 39.7, lng: 125.4, participants: ['고구려', '수나라'], outcome: '고구려 대승',
-            troops: {
-                attacker: {
-                    name: '수나라군', from: { lat: 40.5, lng: 116.4 }, to: { lat: 39.7, lng: 125.4 }, type: 'land',
-                    waypoints: [
-                        { lat: 40.6, lng: 117.0 }, { lat: 40.7, lng: 118.0 }, { lat: 40.8, lng: 119.0 }, // 산해관 북쪽
-                        { lat: 41.0, lng: 120.0 }, { lat: 41.2, lng: 121.0 }, { lat: 41.5, lng: 122.0 }, // 요동반도 북부
-                        { lat: 41.6, lng: 123.0 }, { lat: 41.5, lng: 124.0 }, { lat: 41.3, lng: 124.8 }, // 요양
-                        { lat: 40.8, lng: 125.2 }, { lat: 40.3, lng: 125.3 }, { lat: 39.9, lng: 125.4 }  // 압록강→평양
-                    ]
-                }
-            }
-        },
-        {
-            name: '황산벌 전투', year: 660, lat: 36.0, lng: 127.1, participants: ['신라당연합', '백제'], outcome: '신라당 승리',
-            troops: {
-                attacker: {
-                    name: '신라군', from: { lat: 35.8, lng: 129.2 }, to: { lat: 36.0, lng: 127.1 }, type: 'land',
-                    waypoints: [{ lat: 35.85, lng: 129.0 }, { lat: 35.9, lng: 128.5 }, { lat: 35.93, lng: 128.0 }, { lat: 35.95, lng: 127.8 }, { lat: 35.97, lng: 127.5 }, { lat: 35.98, lng: 127.3 }]
-                }
-            }
-        },
-        {
-            name: '안시성 전투', year: 645, lat: 40.5, lng: 124.3, participants: ['고구려', '당나라'], outcome: '고구려 승리',
-            troops: {
-                attacker: {
-                    name: '당나라군', from: { lat: 40.0, lng: 116.4 }, to: { lat: 40.5, lng: 124.3 }, type: 'land',
-                    waypoints: [
-                        { lat: 40.6, lng: 117.0 }, { lat: 40.7, lng: 118.0 }, { lat: 40.8, lng: 119.0 }, // 산해관 북쪽
-                        { lat: 41.0, lng: 120.0 }, { lat: 41.2, lng: 121.0 }, { lat: 41.4, lng: 122.0 }, // 요동반도 북부
-                        { lat: 41.3, lng: 123.0 }, { lat: 41.0, lng: 123.8 }, { lat: 40.7, lng: 124.2 }  // 요양→안시성
-                    ]
-                }
-            }
-        },
-        { name: '백강 전투', year: 663, lat: 37.8, lng: 126.6, participants: ['신라당연합', '백제왜연합'], outcome: '신라당 승리' }
-    ],
-    '700_900': [
-        { name: '매초성 전투', year: 733, lat: 43.8, lng: 127.5, participants: ['발해', '당나라'], outcome: '발해 승리' }
-    ],
     '900_1100': [
-        {
-            name: '귀주대첩', year: 1019, lat: 38.9, lng: 125.2, participants: ['고려', '거란'], outcome: '고려 대승',
-            troops: {
-                attacker: {
-                    name: '거란군', from: { lat: 42.0, lng: 120.0 }, to: { lat: 38.9, lng: 125.2 }, type: 'land',
-                    waypoints: [
-                        { lat: 42.0, lng: 121.0 }, { lat: 42.0, lng: 122.0 }, { lat: 41.8, lng: 123.0 }, // 요동반도 북부
-                        { lat: 41.6, lng: 123.8 }, { lat: 41.4, lng: 124.4 }, { lat: 41.2, lng: 124.8 }, // 요양
-                        { lat: 40.8, lng: 125.1 }, { lat: 40.4, lng: 125.2 }, { lat: 40.0, lng: 125.2 }, // 압록강
-                        { lat: 39.6, lng: 125.2 }, { lat: 39.3, lng: 125.2 }, { lat: 39.0, lng: 125.2 } // 평안도
-                    ]
-                }
-            }
+        // 후삼국 통일전쟁 (927-936)
+        { 
+            name: '공산 전투', 
+            year: 927, 
+            warId: 'WAR_TK',
+            lat: 35.98, 
+            lng: 128.69, 
+            participants: ['후백제', '고려'], 
+            outcome: '후백제 승리',
+            details: '후백제 견훤이 신라를 공격하자 왕건이 구원하러 갔으나 대구 팔공산에서 포위되어 대패함',
+            winnerGeneral: '견훤',
+            loserGeneral: '왕건'
+        },
+        { 
+            name: '고창 전투', 
+            year: 930, 
+            warId: 'WAR_TK',
+            lat: 36.5683, 
+            lng: 128.7297, 
+            participants: ['고려', '후백제'], 
+            outcome: '고려 승리',
+            details: '왕건이 안동(고창)에서 후백제군을 대파하여 후삼국 통일의 주도권을 잡은 결정적 전투',
+            winnerGeneral: '왕건',
+            loserGeneral: '견훤'
+        },
+        { 
+            name: '일리천 전투', 
+            year: 936, 
+            warId: 'WAR_TK',
+            lat: 36.22, 
+            lng: 128.36, 
+            participants: ['고려', '후백제'], 
+            outcome: '고려 승리',
+            details: '고려가 구미 선산에서 후백제 신검의 군대를 격파하고 후삼국을 통일한 마지막 전투',
+            winnerGeneral: '왕건',
+            loserGeneral: '신검'
+        },
+        
+        // 거란 침입 (993-1019)
+        { 
+            name: '안융진 전투 (서희 담판)', 
+            year: 993, 
+            warId: 'WAR_KH',
+            lat: 39.61, 
+            lng: 125.66, 
+            participants: ['고려', '거란'], 
+            outcome: '고려 외교 승리',
+            details: '거란 소손녕의 침입을 막고 서희가 외교 담판을 벌여 강동 6주를 확보함',
+            winnerGeneral: '서희',
+            loserGeneral: '소손녕'
+        },
+        { 
+            name: '흥화진 전투', 
+            year: 1010, 
+            warId: 'WAR_KH',
+            lat: 40.19, 
+            lng: 124.53, 
+            participants: ['고려', '거란'], 
+            outcome: '고려 방어 성공',
+            details: '양규가 거란 성종의 40만 대군을 7일간 막아내며 거란군의 남하를 지연시킴',
+            winnerGeneral: '양규',
+            loserGeneral: '야율융서'
+        },
+        { 
+            name: '귀주 대첩', 
+            year: 1019, 
+            warId: 'WAR_KH',
+            lat: 39.97, 
+            lng: 125.24, 
+            participants: ['고려', '거란'], 
+            outcome: '고려 대승',
+            details: '강감찬이 퇴각하는 소배압의 10만 거란군을 귀주에서 맞이하여 크게 물리침',
+            winnerGeneral: '강감찬',
+            loserGeneral: '소배압'
         }
     ],
     '1100_1300': [
-        {
-            name: '처인성 전투', year: 1232, lat: 37.2, lng: 127.4, participants: ['고려', '몽골'], outcome: '고려 승리',
-            troops: {
-                attacker: {
-                    name: '몽골군', from: { lat: 40.0, lng: 116.4 }, to: { lat: 37.2, lng: 127.4 }, type: 'land',
-                    waypoints: [
-                        { lat: 40.5, lng: 117.0 }, { lat: 40.8, lng: 118.0 }, { lat: 41.0, lng: 119.0 }, // 산해관 북쪽
-                        { lat: 41.2, lng: 120.0 }, { lat: 41.5, lng: 121.5 }, { lat: 41.6, lng: 123.0 }, // 요동반도 북부
-                        { lat: 41.4, lng: 124.0 }, { lat: 41.0, lng: 124.8 }, { lat: 40.5, lng: 125.3 }, // 요양→압록강
-                        { lat: 39.8, lng: 125.8 }, { lat: 39.0, lng: 126.3 }, { lat: 38.3, lng: 126.8 }, // 평안도→황해도
-                        { lat: 37.8, lng: 127.1 }, { lat: 37.5, lng: 127.3 }  // 경기도
-                    ]
-                }
-            }
+        // 여진 정벌 (1107)
+        { 
+            name: '여진 정벌 (석성)', 
+            year: 1107, 
+            warId: 'WAR_JR',
+            lat: 40.25, 
+            lng: 127.5, 
+            participants: ['고려', '여진'], 
+            outcome: '고려 승리',
+            details: '윤관이 별무반을 이끌고 여진을 정벌하여 동북 9성을 쌓음',
+            winnerGeneral: '윤관',
+            loserGeneral: '여진족'
+        },
+        
+        // 몽골 침입 (1231-1270)
+        { 
+            name: '귀주성 전투', 
+            year: 1231, 
+            warId: 'WAR_MG',
+            lat: 39.97, 
+            lng: 125.24, 
+            participants: ['고려', '몽골'], 
+            outcome: '고려 승리',
+            details: '몽골 1차 침입 당시 박서가 몽골군의 온갖 공격을 막아내고 성을 끝까지 사수함',
+            winnerGeneral: '박서',
+            loserGeneral: '살리타'
+        },
+        { 
+            name: '처인성 전투', 
+            year: 1232, 
+            warId: 'WAR_MG',
+            lat: 37.15, 
+            lng: 127.2, 
+            participants: ['고려', '몽골'], 
+            outcome: '고려 승리',
+            details: '승려 김윤후가 처인 부곡민과 함께 몽골군 사령관 살리타를 사살하여 물리침',
+            winnerGeneral: '김윤후',
+            loserGeneral: '살리타'
+        },
+        { 
+            name: '죽주성 전투', 
+            year: 1236, 
+            warId: 'WAR_MG', 
+            lat: 37.08, 
+            lng: 127.42, 
+            participants: ['고려', '몽골'], 
+            outcome: '고려 승리',
+            details: '방호별감 송문주가 몽골군의 포 공격과 화공을 막아내고 반격하여 승리함',
+            winnerGeneral: '송문주',
+            loserGeneral: '몽골 장수'
+        },
+        { 
+            name: '충주성 전투', 
+            year: 1253, 
+            warId: 'WAR_MG',
+            lat: 36.97, 
+            lng: 127.93, 
+            participants: ['고려', '몽골'], 
+            outcome: '고려 승리',
+            details: '김윤후가 노비 문서를 불태우며 관노비들을 격려하여 몽골군을 격퇴함',
+            winnerGeneral: '김윤후',
+            loserGeneral: '몽골 장수'
+        },
+        { 
+            name: '삼별초의 항쟁', 
+            year: 1270, 
+            warId: 'WAR_MG',
+            lat: 34.48, 
+            lng: 126.26, 
+            participants: ['삼별초', '여몽연합군'], 
+            outcome: '여몽연합군 승리',
+            details: '개경 환도에 반대하여 진도(용장성)와 제주도(항파두리)로 이동하며 벌인 최후의 항전',
+            winnerGeneral: '여몽연합군',
+            loserGeneral: '배중손'
         }
     ],
     '1300_1400': [
-        { name: '홍건적의 난', year: 1361, lat: 37.9, lng: 127.7, participants: ['고려', '홍건적'], outcome: '고려 승리' }
-    ],
-    '1400_1600': [
-        {
-            name: '임진왜란', year: 1592, lat: 35.2, lng: 129.0, participants: ['조선', '일본', '명나라'], outcome: '조선명 승리',
-            troops: { attacker: { name: '왜군', from: { lat: 33.5, lng: 130.5 }, to: { lat: 35.2, lng: 129.0 }, type: 'sea', waypoints: [{ lat: 34.0, lng: 129.5 }, { lat: 34.5, lng: 129.3 }] } }
+        // 홍건적의 난 (1362)
+        { 
+            name: '개경 탈환전', 
+            year: 1362, 
+            warId: 'WAR_RB',
+            lat: 37.96, 
+            lng: 126.55, 
+            participants: ['고려', '홍건적'], 
+            outcome: '고려 승리',
+            details: '홍건적에게 점령당한 수도 개경을 이성계, 정세운, 최영 등이 탈환함',
+            winnerGeneral: '이성계',
+            loserGeneral: '사유'
         },
-        {
-            name: '한산도대첩', year: 1592, lat: 34.8, lng: 128.4, participants: ['조선수군', '일본수군'], outcome: '조선 대승',
-            troops: { attacker: { name: '왜수군', from: { lat: 34.5, lng: 128.0 }, to: { lat: 34.8, lng: 128.4 }, type: 'sea' } }
+        
+        // 왜구 격퇴전 (1380)
+        { 
+            name: '황산 대첩', 
+            year: 1380, 
+            warId: 'WAR_JP',
+            lat: 35.45, 
+            lng: 127.5, 
+            participants: ['고려', '왜구'], 
+            outcome: '고려 대승',
+            details: '이성계가 남원 운봉에서 아지발도가 이끄는 왜구 대군을 섬멸함',
+            winnerGeneral: '이성계',
+            loserGeneral: '아지발도'
         },
-        {
-            name: '한산도 대첩', year: 1592, lat: 34.8, lng: 128.4, participants: ['조선수군', '일본수군'], outcome: '조선 대승',
-            troops: { attacker: { name: '왜수군', from: { lat: 34.5, lng: 128.0 }, to: { lat: 34.8, lng: 128.4 }, type: 'sea' } }
-        },
-        {
-            name: '명량해전', year: 1597, lat: 34.5, lng: 126.3, participants: ['조선수군', '일본수군'], outcome: '조선 대승',
-            troops: { attacker: { name: '왜수군', from: { lat: 34.3, lng: 126.5 }, to: { lat: 34.5, lng: 126.3 }, type: 'sea' } }
-        },
-        {
-            name: '노량해전', year: 1598, lat: 34.6, lng: 128.0, participants: ['조선수군', '일본수군'], outcome: '조선 승리',
-            troops: { attacker: { name: '왜수군', from: { lat: 34.4, lng: 128.2 }, to: { lat: 34.6, lng: 128.0 }, type: 'sea' } }
-        },
-        {
-            name: '행주대첩', year: 1593, lat: 37.6, lng: 126.8, participants: ['조선', '일본'], outcome: '조선 승리',
-            troops: { attacker: { name: '왜군', from: { lat: 37.5, lng: 127.0 }, to: { lat: 37.6, lng: 126.8 }, type: 'land' } }
+        { 
+            name: '진포 대첩', 
+            year: 1380, 
+            warId: 'WAR_JP',
+            lat: 36, 
+            lng: 126.7, 
+            participants: ['고려', '왜구'], 
+            outcome: '고려 대승',
+            details: '최무선이 화포를 사용하여 왜선 500척을 소각시킴',
+            winnerGeneral: '최무선',
+            loserGeneral: '왜구 장수'
         }
-    ],
-    '1600_1800': [
-        {
-            name: '병자호란', year: 1636, lat: 37.5, lng: 127.0, participants: ['조선', '청나라'], outcome: '청나라 승리',
-            troops: {
-                attacker: {
-                    name: '청군', from: { lat: 40.0, lng: 116.4 }, to: { lat: 37.5, lng: 127.0 }, type: 'land',
-                    waypoints: [
-                        { lat: 40.5, lng: 117.5 }, { lat: 40.8, lng: 118.5 }, { lat: 41.0, lng: 119.5 }, // 산해관 북쪽
-                        { lat: 41.3, lng: 121.0 }, { lat: 41.5, lng: 122.5 }, { lat: 41.4, lng: 123.8 }, // 요동반도 북부
-                        { lat: 41.0, lng: 124.6 }, { lat: 40.5, lng: 125.2 }, { lat: 40.0, lng: 125.5 }, // 요양→압록강
-                        { lat: 39.3, lng: 126.0 }, { lat: 38.5, lng: 126.5 }, { lat: 38.0, lng: 126.8 }  // 평안도→한성
-                    ]
-                }
-            }
-        },
-        {
-            name: '의주 전투', year: 1636, lat: 40.2, lng: 124.5, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-            troops: { attacker: { name: '청군', from: { lat: 40.5, lng: 124.0 }, to: { lat: 40.2, lng: 124.5 }, type: 'land' } }
-        },
-        {
-            name: '정주성 전투', year: 1636, lat: 39.7, lng: 125.2, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-            troops: { attacker: { name: '청군', from: { lat: 40.2, lng: 124.5 }, to: { lat: 39.7, lng: 125.2 }, type: 'land' } }
-        },
-        {
-            name: '안주성 전투', year: 1636, lat: 39.6, lng: 125.7, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-            troops: { attacker: { name: '청군', from: { lat: 39.7, lng: 125.2 }, to: { lat: 39.6, lng: 125.7 }, type: 'land' } }
-        },
-        {
-            name: '평양성 전투', year: 1636, lat: 39.0, lng: 125.8, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-            troops: { attacker: { name: '청군', from: { lat: 39.6, lng: 125.7 }, to: { lat: 39.0, lng: 125.8 }, type: 'land' } }
-        },
-        {
-            name: '황주 전투', year: 1637, lat: 38.6, lng: 125.8, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-            troops: { attacker: { name: '청군', from: { lat: 39.0, lng: 125.8 }, to: { lat: 38.6, lng: 125.8 }, type: 'land' } }
-        },
-        {
-            name: '남한산성 포위전', year: 1637, lat: 37.48, lng: 127.18, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-            troops: { attacker: { name: '청군', from: { lat: 37.5, lng: 127.0 }, to: { lat: 37.48, lng: 127.18 }, type: 'land' } }
-        },
-        {
-            name: '쌍령 전투', year: 1637, lat: 37.7, lng: 127.3, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-            troops: { attacker: { name: '청군', from: { lat: 37.5, lng: 127.0 }, to: { lat: 37.7, lng: 127.3 }, type: 'land' } }
-        },
-        {
-            name: '김화 전투', year: 1637, lat: 38.1, lng: 127.5, participants: ['조선', '청나라'], outcome: '청나라 승리', war: '병자호란',
-            troops: { attacker: { name: '청군', from: { lat: 37.7, lng: 127.3 }, to: { lat: 38.1, lng: 127.5 }, type: 'land' } }
-        }
-    ],
-    '1800_1900': [
-        { name: '청일전쟁', year: 1894, lat: 37.9, lng: 124.7, participants: ['청나라', '일본'], outcome: '일본 승리' }
-    ],
-    '1900_1945': [
-        { name: '러일전쟁', year: 1904, lat: 38.9, lng: 125.7, participants: ['러시아', '일본'], outcome: '일본 승리' }
     ]
 };
 
@@ -1209,6 +1245,15 @@ function showBattleMarkers(year) {
     if (!battles) return;
 
     battles.forEach(battle => {
+        // 전쟁 기간 필터링: 전투의 warId로 전쟁 정보를 가져와서 현재 년도가 전쟁 기간 내에 있는지 확인
+        if (battle.warId && WARS[battle.warId]) {
+            const war = WARS[battle.warId];
+            // 현재 년도가 전쟁 기간 내에 있지 않으면 표시하지 않음
+            if (year < war.startYear || year > war.endYear) {
+                return;
+            }
+        }
+
         // 전투 마커
         const icon = L.divIcon({
             className: 'battle-marker',
@@ -4853,7 +4898,7 @@ function getEraIndexForYear(year) {
             return i;
         }
     }
-    return 2; // 기본값: 삼국시대
+    return -1; // 찾지 못한 경우
 }
 
 // 시대에 맞게 타임라인 재렌더링
@@ -4956,10 +5001,13 @@ function prevEra() {
 function initTimeline() {
     const axis = document.getElementById('timeline-axis');
     const erasContainer = document.getElementById('timeline-eras');
-    const wrapper = document.getElementById('timeline-wrapper');
+    const container = document.getElementById('timeline-container');
     const handle = document.getElementById('timeline-handle');
 
-    if (!axis || !erasContainer || !wrapper || !handle) return;
+    if (!axis || !erasContainer || !container || !handle) {
+        console.error('Timeline elements not found');
+        return;
+    }
 
     console.log('initTimeline called - era-focused mode');
 
@@ -4969,18 +5017,40 @@ function initTimeline() {
     // 3. 이벤트 리스너 (클릭 및 드래그)
     let isDragging = false;
 
-    wrapper.addEventListener('mousedown', (e) => {
+    container.addEventListener('mousedown', (e) => {
         isDragging = true;
         handleTimelineInput(e);
+        e.preventDefault();
     });
 
     document.addEventListener('mousemove', (e) => {
         if (isDragging) {
             handleTimelineInput(e);
+            e.preventDefault();
         }
     });
 
     document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    // 터치 이벤트 지원
+    container.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        const touch = e.touches[0];
+        handleTimelineInput(touch);
+        e.preventDefault();
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            const touch = e.touches[0];
+            handleTimelineInput(touch);
+            e.preventDefault();
+        }
+    });
+
+    document.addEventListener('touchend', () => {
         isDragging = false;
     });
 
@@ -4989,10 +5059,10 @@ function initTimeline() {
 }
 
 function handleTimelineInput(e) {
-    const wrapper = document.getElementById('timeline-wrapper');
-    if (!wrapper) return;
+    const container = document.getElementById('timeline-container');
+    if (!container) return;
 
-    const rect = wrapper.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
     let x = e.clientX - rect.left;
 
     // 범위 제한
@@ -5041,6 +5111,46 @@ function updateTimelineHandle(year) {
         handle.style.left = `${percent}%`;
         label.textContent = safeYear < 0 ? `BC ${Math.abs(safeYear)}` : safeYear;
     }
+}
+
+
+// 년도 입력으로 이동하는 함수
+function jumpToYear() {
+    const input = document.getElementById('year-input-box');
+    if (!input) return;
+
+    const yearValue = parseInt(input.value);
+    
+    if (isNaN(yearValue)) {
+        alert('올바른 년도를 입력해주세요.');
+        return;
+    }
+
+    // 년도 범위 확인 (-108 ~ 2024)
+    if (yearValue < -108 || yearValue > 2024) {
+        alert('년도는 BC 108년부터 2024년 사이여야 합니다.');
+        return;
+    }
+
+    // 해당 년도가 속한 시대 찾기
+    const eraIndex = getEraIndexForYear(yearValue);
+    
+    if (eraIndex === -1) {
+        alert('해당 년도의 시대를 찾을 수 없습니다.');
+        return;
+    }
+
+    // 시대가 다르면 시대 전환
+    if (eraIndex !== currentEraIndex) {
+        currentEraIndex = eraIndex;
+        updateTimelineForEra(currentEraIndex);
+    }
+
+    // 년도 업데이트
+    updateYear(yearValue);
+    
+    // 입력창 비우기 (선택사항)
+    // input.value = '';
 }
 
 

@@ -845,6 +845,61 @@ body {
     font-weight: 500;
 }
 
+/* 년도 입력 컨트롤 */
+.year-input-control {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    background: white;
+    padding: 8px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border-color);
+    z-index: 1000;
+    align-items: center;
+}
+
+.year-input-control input[type="number"] {
+    width: 120px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.year-input-control input[type="number"]:focus {
+    border-color: var(--primary-color);
+}
+
+.year-input-control input[type="number"]::-webkit-inner-spin-button,
+.year-input-control input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+.year-input-control button {
+    padding: 8px 16px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.year-input-control button:hover {
+    background: #2563eb;
+}
+
+.year-input-control button:active {
+    transform: scale(0.95);
+}
+
 /* 타임라인 컨트롤 */
 /* 타임라인 컨트롤 (OldMapsOnline 스타일) */
 .timeline-control {
