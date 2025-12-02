@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON 뷰어 - gojoseontest.geojson</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 100px);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .map-container {
+            flex: 2;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-panel {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .info-panel h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #667eea;
+        }
+
+        .info-item {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .info-item value {
+            display: block;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 16px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🗺️ GeoJSON 뷰어</h1>
+        <p>gojoseontest.geojson 파일 시각화</p>
+    </div>
+
+    <div class="container">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+
+        <div class="info-panel">
+            <h2>📊 GeoJSON 정보</h2>
+
+            <div class="stats" id="stats"></div>
+
+            <div id="properties"></div>
+
+            <h2 style="margin-top: 24px;">💾 GeoJSON 코드</h2>
+            <pre class="code-block" id="geojson-code"></pre>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 지도 초기화
+        const map = L.map('map').setView([39, 126], 5);
+
+        // 타일 레이어 추가
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+
+        // GeoJSON 로드
+        fetch('gojoseontest.geojson')
+            .then(response => response.json())
+            .then(data => {
+                console.log('GeoJSON 로드 완료:', data);
+
+                // 통계 정보 표시
+                const features = data.features || [];
+                const featureCount = features.length;
+                let totalCoordinates = 0;
+
+                features.forEach(feature => {
+                    if (feature.geometry.type === 'Polygon') {
+                        totalCoordinates += feature.geometry.coordinates[0].length;
+                    }
+                });
+
+                document.getElementById('stats').innerHTML = `
+                    <div class="stat-card">
+                        <div class="number">${featureCount}</div>
+                        <div class="label">Features</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${totalCoordinates}</div>
+                        <div class="label">좌표 개수</div>
+                    </div>
+                `;
+
+                // 속성 정보 표시
+                if (features.length > 0) {
+                    const properties = features[0].properties || {};
+                    let propertiesHTML = '<h2>🏷️ 속성 정보</h2>';
+
+                    for (const [key, value] of Object.entries(properties)) {
+                        propertiesHTML += `
+                            <div class="info-item">
+                                <label>${key}</label>
+                                <value>${value}</value>
+                            </div>
+                        `;
+                    }
+
+                    document.getElementById('properties').innerHTML = propertiesHTML;
+                }
+
+                // GeoJSON 코드 표시
+                document.getElementById('geojson-code').textContent = JSON.stringify(data, null, 2);
+
+                // 지도에 GeoJSON 추가
+                const geojsonLayer = L.geoJSON(data, {
+                    style: function (feature) {
+                        return {
+                            color: feature.properties.color || feature.properties.stroke || '#ef4444',
+                            fillColor: feature.properties.fill || feature.properties.color || '#ef4444',
+                            fillOpacity: feature.properties['fill-opacity'] || 0.5,
+                            weight: feature.properties['stroke-width'] || 2
+                        };
+                    },
+                    onEachFeature: function (feature, layer) {
+                        if (feature.properties) {
+                            let popupContent = '<div style="font-family: sans-serif;">';
+                            popupContent += `<h3 style="margin: 0 0 8px 0; color: #667eea;">${feature.properties.name || feature.properties.NAME || '이름 없음'}</h3>`;
+
+                            for (const [key, value] of Object.entries(feature.properties)) {
+                                if (key !== 'name' && key !== 'NAME') {
+                                    popupContent += `<p style="margin: 4px 0;"><strong>${key}:</strong> ${value}</p>`;
+                                }
+                            }
+
+                            popupContent += '</div>';
+                            layer.bindPopup(popupContent);
+                        }
+                    }
+                }).addTo(map);
+
+                // 지도 범위를 GeoJSON에 맞춤
+                map.fitBounds(geojsonLayer.getBounds());
+
+            })
+            .catch(error => {
+                console.error('GeoJSON 로드 실패:', error);
+                document.getElementById('stats').innerHTML = `
+                    <div style="color: red; padding: 20px;">
+                        ❌ GeoJSON 파일을 로드할 수 없습니다: ${error.message}
+                    </div>
+                `;
+            });
+    </script>
+</body>
+
+</html>

@@ -17,13 +17,13 @@
     --bg-light: #f3f4f6;
     --bg-white: #ffffff;
     --border-color: #e5e7eb;
-    --shadow: 0 1px 3px rgba(0,0,0,0.1);
-    --shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 
-                 'Malgun Gothic', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo',
+        'Malgun Gothic', sans-serif;
     color: var(--text-dark);
     background: var(--bg-light);
     overflow-x: hidden;
@@ -52,7 +52,7 @@ body {
     width: 780px;
     height: 100vh;
     background: white;
-    box-shadow: -2px 0 12px rgba(0,0,0,0.15);
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
     transition: right 0.3s ease;
     z-index: 1001;
     overflow-y: auto;
@@ -117,7 +117,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0);
+    background: rgba(0, 0, 0, 0);
     z-index: 199;
     display: none;
     transition: opacity 0.3s ease;
@@ -220,7 +220,7 @@ body {
     padding: 12px 20px;
     background: white;
     color: var(--text-dark);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -311,7 +311,7 @@ body {
     background: white;
     padding: 8px;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .layer-btn {
@@ -350,7 +350,7 @@ body {
     font-size: 24px;
     cursor: pointer;
     transition: all 0.3s;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -378,7 +378,7 @@ body {
     width: 300px;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     transition: left 0.3s ease;
     border: 2px solid var(--border-color);
@@ -422,7 +422,7 @@ body {
 }
 
 .close-draw-btn:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .draw-panel-content {
@@ -489,7 +489,7 @@ body {
         flex-wrap: wrap;
         max-width: calc(100% - 20px);
     }
-    
+
     .layer-btn {
         padding: 8px 12px;
         font-size: 12px;
@@ -506,7 +506,7 @@ body {
 /* 깔끔한 팝업 스타일 */
 .leaflet-popup-content-wrapper {
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border: 1px solid #e5e7eb;
 }
 
@@ -516,7 +516,7 @@ body {
 }
 
 .leaflet-popup-tip {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 줌 컨트롤 스타일 */
@@ -524,7 +524,7 @@ body {
     border: 1px solid #e5e7eb !important;
     border-radius: 8px !important;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 .leaflet-control-zoom a {
@@ -553,7 +553,7 @@ body {
     background: white;
     padding: 6px 12px;
     border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     border: 2px solid #3b82f6;
     cursor: pointer;
     transition: all 0.2s;
@@ -602,7 +602,7 @@ body {
     background: white;
     padding: 6px 12px;
     border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     border: 2px solid;
     cursor: pointer;
     transition: all 0.2s;
@@ -610,7 +610,7 @@ body {
 
 .event-marker-content:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .event-icon {
@@ -633,6 +633,7 @@ body {
     0% {
         stroke-dashoffset: 0;
     }
+
     100% {
         stroke-dashoffset: 20;
     }
@@ -648,7 +649,7 @@ body {
     font-size: 24px;
     text-align: center;
     line-height: 30px;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     cursor: pointer;
     transition: transform 0.2s;
 }
@@ -666,9 +667,12 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.1);
     }
@@ -683,7 +687,8 @@ body {
 
 .animated-ship {
     /* 배 크기 조절: font-size를 변경하세요 (기본: 20px) */
-    font-size: 20px; /* 이 값을 변경하면 배 크기가 바뀝니다 */
+    font-size: 20px;
+    /* 이 값을 변경하면 배 크기가 바뀝니다 */
     text-align: center;
     line-height: 24px;
     filter: drop-shadow(0 3px 6px rgba(59, 130, 246, 0.5));
@@ -693,15 +698,20 @@ body {
 }
 
 @keyframes shipFloat {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateY(0px) rotate(0deg);
     }
+
     25% {
         transform: translateY(-3px) rotate(-2deg);
     }
+
     50% {
         transform: translateY(0px) rotate(0deg);
     }
+
     75% {
         transform: translateY(3px) rotate(2deg);
     }
@@ -720,9 +730,12 @@ body {
 }
 
 @keyframes soldierMarch {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateY(0px) rotate(-5deg);
     }
+
     50% {
         transform: translateY(-4px) rotate(5deg);
     }
@@ -730,9 +743,7 @@ body {
 
 /* HoI4 스타일 공격 화살표 */
 .hoi4-attack-arrow {
-    filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.6)) 
-            drop-shadow(0 0 20px rgba(255, 0, 0, 0.4))
-            drop-shadow(0 0 30px rgba(255, 0, 0, 0.2));
+    filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(255, 0, 0, 0.4)) drop-shadow(0 0 30px rgba(255, 0, 0, 0.2));
     animation: attackPulse 2s ease-in-out infinite;
 }
 
@@ -741,9 +752,12 @@ body {
 }
 
 @keyframes attackPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 0.85;
     }
+
     50% {
         opacity: 1;
     }
@@ -761,9 +775,12 @@ body {
 }
 
 @keyframes bounce {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateY(0);
     }
+
     50% {
         transform: translateY(-5px);
     }
@@ -795,7 +812,7 @@ body {
     cursor: pointer;
     pointer-events: auto;
     transition: transform 0.2s;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .event-marker:hover {
@@ -810,7 +827,7 @@ body {
     background: white;
     padding: 12px 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     border: 1px solid var(--border-color);
 }
@@ -829,38 +846,38 @@ body {
 }
 
 /* 타임라인 컨트롤 */
+/* 타임라인 컨트롤 (OldMapsOnline 스타일) */
 .timeline-control {
     position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 16px;
-    background: white;
-    padding: 16px 24px;
-    border-radius: 50px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 0 20px;
+    gap: 20px;
     z-index: 1000;
-    width: 85%;
-    max-width: 900px;
-    border: 1px solid var(--border-color);
-    transition: left 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    transition: width 0.3s ease;
 }
 
-/* 사이드 패널이 열렸을 때 타임라인 이동 */
-.timeline-control.shifted {
-    left: calc(50% - 390px);
+/* 사이드 패널이 열렸을 때 타임라인 너비 조정 */
+.side-panel.open~.screen .timeline-control {
+    width: calc(100% - 780px);
 }
 
 .timeline-btn {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    border: 2px solid var(--primary-color);
+    border: 1px solid var(--border-color);
     background: white;
-    color: var(--primary-color);
-    font-size: 16px;
+    color: var(--text-dark);
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
@@ -869,115 +886,177 @@ body {
     flex-shrink: 0;
 }
 
-.timeline-btn.speed-btn {
-    font-size: 13px;
-    font-weight: 600;
+.timeline-btn:hover {
+    background: var(--bg-light);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
 }
 
-.timeline-btn:hover {
+.timeline-btn.active {
     background: var(--primary-color);
     color: white;
-    transform: scale(1.05);
+    border-color: var(--primary-color);
 }
 
-.slider-container {
-    flex: 1;
-    position: relative;
-}
-
-.year-slider {
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
-    /* 시대별 그라데이션: 고조선 -> 원삼국 -> 삼국 -> 남북국 -> 고려 -> 조선 -> 대한제국 -> 일제 -> 현대 */
-    background: linear-gradient(to right, 
-        #9ca3af 0%,        /* BC 2000 - 고조선 (회색) */
-        #9ca3af 47.0%,     /* BC 108 - 고조선 끝 */
-        #d1d5db 47.0%,     /* BC 108 - 원삼국시대 (연회색) */
-        #d1d5db 57.1%,     /* 300 - 삼국시대 시작 */
-        #fda4af 57.1%,     /* 300 - 삼국시대 (분홍) */
-        #fda4af 67.1%,     /* 698 - 남북국시대 시작 */
-        #7dd3fc 67.1%,     /* 698 - 남북국시대 (하늘색) */
-        #7dd3fc 72.7%,     /* 926 - 고려 시작 */
-        #86efac 72.7%,     /* 918 - 고려시대 (녹색) */
-        #86efac 84.3%,     /* 1392 - 조선 시작 */
-        #fde047 84.3%,     /* 1392 - 조선시대 (황금색) */
-        #fde047 96.8%,     /* 1897 - 대한제국 */
-        #f59e0b 96.8%,     /* 1897 - 대한제국 (주황) */
-        #f59e0b 97.1%,     /* 1910 - 일제강점기 */
-        #dc2626 97.1%,     /* 1910 - 일제강점기 (빨강) */
-        #dc2626 98.1%,     /* 1945 - 현대 */
-        #60a5fa 98.1%      /* 1945 - 현대 (파랑) */
-    );
-    outline: none;
-    -webkit-appearance: none;
-    appearance: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.year-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
-    transition: all 0.2s;
-}
-
-.year-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 3px 8px rgba(59, 130, 246, 0.6);
-}
-
-.year-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
-    transition: all 0.2s;
-}
-
-.year-slider::-moz-range-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 3px 8px rgba(59, 130, 246, 0.6);
-}
-
-.slider-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 11px;
-    color: var(--text-light);
-    font-weight: 500;
-}
-
-/* 시대 구분 표시 */
-.era-markers {
+/* 시대 이름 표시 */
+.timeline-era-name {
     position: absolute;
-    top: -25px;
-    left: 0;
-    right: 0;
-    height: 20px;
-    display: flex;
-    font-size: 9px;
-    color: #6b7280;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
     font-weight: 600;
+    color: var(--primary-color);
+    background: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    white-space: nowrap;
+}
+
+.timeline-wrapper {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.timeline-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.timeline-axis {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
 }
 
-.era-marker {
+.timeline-tick {
     position: absolute;
+    bottom: 0;
+    width: 1px;
+    background: #e5e7eb;
+    height: 100%;
+    z-index: 1;
+    /* Lower z-index than eras */
+}
+
+.timeline-tick.major {
+    background: #d1d5db;
+    height: 100%;
+}
+
+.timeline-tick-label {
+    position: absolute;
+    bottom: 5px;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #6b7280;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+.timeline-eras {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    /* display: flex; removed as children are absolute */
+    pointer-events: none;
+    z-index: 5;
+    /* Ensure eras are above ticks */
+}
+
+.timeline-era-block {
+    position: absolute;
+    height: 100%;
+    border-radius: 4px;
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+    font-weight: 600;
+    overflow: hidden;
     white-space: nowrap;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 2px 4px;
-    border-radius: 3px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    top: 0;
+    /* Ensure top alignment */
+}
+
+.timeline-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ef4444;
+    z-index: 10;
+    pointer-events: none;
+    /* JS로 드래그 처리 */
+    transform: translateX(-50%);
+    transition: left 0.1s linear;
+}
+
+.handle-line {
+    width: 100%;
+    height: 100%;
+    background: #ef4444;
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+}
+
+.handle-knob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    background: #ef4444;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.handle-year {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ef4444;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.handle-year::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid #ef4444;
 }
 
 /* 하단 퀵 액션 */
@@ -1005,7 +1084,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     border: 1px solid var(--border-color);
 }
 
@@ -1068,8 +1147,15 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .pulse-marker {
@@ -1171,7 +1257,7 @@ body {
 .textbook-draw-tool-btn:hover {
     border-color: var(--primary-color);
     transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .textbook-draw-tool-btn:active {
@@ -1291,8 +1377,15 @@ body {
 }
 
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 /* 교과서 뷰어 네비게이션 버튼 */
@@ -1323,7 +1416,7 @@ body {
 }
 
 #textbook-page-image {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     transform-origin: top center;
 }
@@ -1448,7 +1541,7 @@ body {
     background: white;
     display: flex;
     flex-direction: column;
-    box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
 }
 
 .character-profile {
@@ -1701,7 +1794,7 @@ body {
 
 .participant-count {
     padding: 8px 16px;
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 20px;
     color: white;
     font-size: 14px;
@@ -2302,7 +2395,7 @@ body {
     width: 300px;
     height: 100vh;
     background: white;
-    box-shadow: 4px 0 16px rgba(0,0,0,0.1);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
     transition: left 0.3s ease;
     z-index: 1000;
     display: flex;
@@ -2387,7 +2480,7 @@ body {
     left: 0;
     width: 100%;
     height: 100vh;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 999;
     display: none;
 }
@@ -2403,37 +2496,37 @@ body {
     .split-view {
         flex-direction: column;
     }
-    
+
     .split-left,
     .split-right {
         width: 100%;
     }
-    
+
     .split-left {
         height: 300px;
         border-right: none;
         border-bottom: 2px solid var(--border-color);
     }
-    
+
     .character-grid {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     }
-    
+
     .chat-panel {
         max-width: 100%;
     }
-    
+
     .debate-sides {
         flex-direction: column;
     }
-    
+
     .timeline-control {
         bottom: 80px;
         left: 10px;
         right: 10px;
         padding: 12px;
     }
-    
+
     .slider-labels {
         font-size: 10px;
     }
@@ -2443,19 +2536,377 @@ body {
     .quick-actions {
         gap: 8px;
     }
-    
+
     .action-btn {
         width: 60px;
         height: 60px;
         font-size: 20px;
     }
-    
+
     .action-btn span {
         font-size: 10px;
     }
-    
+
     .character-grid {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 12px;
     }
+}
+
+/* ===================================
+   그리기 패널
+   =================================== */
+
+.draw-panel {
+    position: fixed;
+    left: 20px;
+    bottom: 120px;
+    width: 280px;
+    max-height: calc(100vh - 200px);
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 1100;
+    display: none;
+    flex-direction: column;
+}
+
+.draw-panel.active {
+    display: flex;
+}
+
+.draw-panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.draw-panel-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.close-draw-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-light);
+    line-height: 1;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-draw-btn:hover {
+    color: var(--danger-color);
+}
+
+.draw-panel-content {
+    padding: 12px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.draw-help {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 12px;
+}
+
+.draw-tool-btn {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.draw-tool-btn:hover {
+    background: var(--bg-light);
+    border-color: var(--primary-color);
+}
+
+.draw-tool-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.draw-tool-btn.edit-btn:hover {
+    border-color: var(--secondary-color);
+}
+
+.draw-tool-btn.delete-btn:hover {
+    border-color: var(--danger-color);
+}
+
+.draw-tool-btn.clear-btn:hover {
+    border-color: var(--danger-color);
+}
+
+.memo-toggle-btn {
+    position: fixed;
+    left: 20px;
+    bottom: 60px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 3px solid #fff;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+    z-index: 1099;
+    transition: all 0.2s;
+    pointer-events: auto;
+}
+
+.memo-toggle-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: scale(1.1);
+}
+
+.memo-toggle-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* ===================================
+   GeoJSON 생성 도구
+   =================================== */
+
+/* GeoJSON 섹션 */
+.geojson-section {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f0f9ff;
+    border-radius: 8px;
+    border: 1px solid #bfdbfe;
+}
+
+.geojson-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
+.geojson-section .help-text {
+    font-size: 12px;
+    color: var(--text-light);
+    margin: 0 0 12px 0;
+}
+
+.geojson-section label {
+    display: block;
+    margin: 12px 0 4px 0;
+    font-size: 12px;
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+.geojson-section input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.geojson-section input[type="color"] {
+    width: 100%;
+    height: 40px;
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.geojson-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.geojson-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.geojson-btn:active {
+    transform: translateY(0);
+}
+
+/* GeoJSON 가져오기 버튼 스타일 */
+.geojson-btn.import-btn {
+    background: #10b981;
+}
+
+.geojson-btn.import-btn:hover {
+    background: #059669;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* GeoJSON 불러온 데이터 삭제 버튼 스타일 */
+.geojson-btn.delete-imported-btn {
+    background: #ef4444;
+    margin-top: 12px;
+}
+
+.geojson-btn.delete-imported-btn:hover {
+    background: #dc2626;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* GeoJSON 미리보기 패널 (오른쪽 슬라이드) */
+.geojson-preview-panel {
+    position: fixed !important;
+    top: 0 !important;
+    right: -500px !important;
+    width: 500px !important;
+    height: 100% !important;
+    background: white !important;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2) !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transition: right 0.3s ease-out !important;
+}
+
+.geojson-preview-panel.active {
+    right: 0 !important;
+}
+
+.geojson-preview-header {
+    padding: 20px;
+    border-bottom: 2px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(to bottom, #f9fafb, #ffffff);
+}
+
+.geojson-preview-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.close-preview-btn {
+    background: none;
+    border: none;
+    font-size: 32px;
+    cursor: pointer;
+    color: #9ca3af;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.close-preview-btn:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.geojson-preview-body {
+    flex: 1;
+    overflow: auto;
+    background: #1e1e1e;
+}
+
+.geojson-preview-body pre {
+    background: #1e1e1e;
+    padding: 20px;
+    margin: 0;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.6;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    color: #d4d4d4;
+    white-space: pre;
+    tab-size: 2;
+    height: 100%;
+}
+
+.geojson-preview-footer {
+    padding: 16px 20px;
+    border-top: 2px solid #e5e7eb;
+    background: #f9fafb;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.preview-btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.2s;
+    color: white;
+}
+
+.preview-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.preview-btn-primary {
+    background: #3b82f6;
+}
+
+.preview-btn-primary:hover {
+    background: #2563eb;
+}
+
+.preview-btn-success {
+    background: #10b981;
+}
+
+.preview-btn-success:hover {
+    background: #059669;
+}
+
+/* 기존 모달 스타일 제거용 - 사용 안 함 */
+.geojson-modal {
+    display: none !important;
 }
