@@ -117,7 +117,29 @@
                         <button class="geojson-btn" onclick="previewGeoJSON()">
                             👁️ 미리보기
                         </button>
-                        <button class="action-btn" onclick="openPanel('panel-textbook')">
+
+                        <!-- GeoJSON 가져오기 섹션 -->
+                        <hr style="margin: 12px 0; border: none; border-top: 2px solid #10b981;">
+                        <h4>📂 GeoJSON 가져오기</h4>
+                        <p class="help-text">저장된 GeoJSON을 불러와 지도에 표시합니다</p>
+                        
+                        <input type="file" id="geojson-file-input" accept=".geojson,.json" style="display: none;" onchange="loadGeoJSONFile(event)">
+                        <button class="geojson-btn import-btn" onclick="document.getElementById('geojson-file-input').click()">
+                            📁 파일에서 가져오기
+                        </button>
+
+                        <button class="geojson-btn import-btn" onclick="loadGeoJSONFromClipboard()">
+                            📋 클립보드에서 가져오기
+                        </button>
+
+                        <button class="geojson-btn delete-imported-btn" onclick="deleteImportedLayers()">
+                            🗑️ 불러온 데이터 삭제
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="action-btn" onclick="openPanel('panel-textbook')">
                             📚<br><span>교과서</span>
                         </button>
                         <button class="action-btn" onclick="openPanel('panel-characters')">
@@ -1354,30 +1376,6 @@
                                                     <div id="menu-overlay" class="menu-overlay" onclick="toggleMenu()">
                                                     </div>
 
-                                                    <!-- GeoJSON 미리보기 모달 -->
-                                                    <div class="geojson-modal" id="geojson-modal">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h3>GeoJSON 미리보기</h3>
-                                                                <button onclick="closeGeoJSONModal()"
-                                                                    style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light);">×</button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <pre id="geojson-preview"></pre>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button onclick="copyGeoJSONToClipboard()"
-                                                                    style="padding: 10px 20px; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">📋
-                                                                    복사</button>
-                                                                <button onclick="exportToGeoJSON()"
-                                                                    style="padding: 10px 20px; background: var(--success-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">📥
-                                                                    다운로드</button>
-                                                                <button onclick="closeGeoJSONModal()"
-                                                                    style="padding: 10px 20px; background: var(--text-light); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">닫기</button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
                                                     <!-- 그리기 패널 토글 스크립트 (캐시 문제 해결) -->
                                                     <script>
                                                         document.addEventListener('DOMContentLoaded', function () {
@@ -1397,6 +1395,26 @@
                                                     </script>
 
                                                     <script src="scripts/app.js?v=3"></script>
+
+                                                    <!-- GeoJSON 미리보기 패널 (오른쪽 슬라이드) -->
+                                                    <div class="geojson-preview-panel" id="geojson-preview-panel">
+                                                        <div class="geojson-preview-header">
+                                                            <h3>📄 GeoJSON 미리보기</h3>
+                                                            <button onclick="closeGeoJSONPanel()" class="close-preview-btn">×</button>
+                                                        </div>
+                                                        <div class="geojson-preview-body">
+                                                            <pre id="geojson-preview-content"></pre>
+                                                        </div>
+                                                        <div class="geojson-preview-footer">
+                                                            <button onclick="copyGeoJSONToClipboard()" class="preview-btn preview-btn-primary">
+                                                                📋 복사
+                                                            </button>
+                                                            <button onclick="exportToGeoJSON()" class="preview-btn preview-btn-success">
+                                                                📥 다운로드
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
                                                     <div style="display:none"> <!-- Consume trailing div -->
                                                     </div>
 </body>

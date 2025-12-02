@@ -18,6 +18,7 @@ let isAutoPlaying = false; // 자동 재생 상태
 let autoPlayInterval = null; // 자동 재생 인터벌
 let playbackSpeed = 1; // 재생 속도 (0.5x, 1x, 2x, 4x)
 let drawnItems = null; // 그리기 레이어
+let importedLayers = []; // 가져온 레이어들 추적
 let drawControl = null; // 그리기 컨트롤
 let isDrawMode = false; // 그리기 모드 활성화 여부
 
@@ -3790,6 +3791,211 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('역사 지도 학습 서비스가 시작되었습니다.');
 });
 
+// ===================================
+// GeoJSON 가져오기 기능
+// ===================================
+
+// 파일에서 GeoJSON 불러오기
+function loadGeoJSONFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const geojson = JSON.parse(e.target.result);
+            importGeoJSON(geojson, file.name);
+        } catch (error) {
+            console.error('GeoJSON 파싱 오류:', error);
+            alert('❌ 올바른 GeoJSON 파일이 아닙니다.\n\n' + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// 클립보드에서 GeoJSON 불러오기
+async function loadGeoJSONFromClipboard() {
+    try {
+        const text = await navigator.clipboard.readText();
+        const geojson = JSON.parse(text);
+        importGeoJSON(geojson, 'clipboard');
+    } catch (error) {
+        console.error('클립보드 읽기 오류:', error);
+        
+        // 폴백: 직접 입력받기
+        const text = prompt('GeoJSON 데이터를 붙여넣으세요:');
+        if (!text) return;
+        
+        try {
+            const geojson = JSON.parse(text);
+            importGeoJSON(geojson, 'input');
+        } catch (parseError) {
+            alert('❌ 올바른 GeoJSON 형식이 아닙니다.\n\n' + parseError.message);
+        }
+    }
+}
+
+// GeoJSON을 지도에 가져오기 (복원)
+function importGeoJSON(geojson, source = 'unknown') {
+    try {
+        if (!geojson || !geojson.type) {
+            throw new Error('유효하지 않은 GeoJSON 형식입니다.');
+        }
+
+        let features = [];
+        
+        // FeatureCollection 처리
+        if (geojson.type === 'FeatureCollection') {
+            features = geojson.features || [];
+        } 
+        // 단일 Feature 처리
+        else if (geojson.type === 'Feature') {
+            features = [geojson];
+        }
+        // Geometry만 있는 경우
+        else if (geojson.type === 'Point' || geojson.type === 'LineString' || 
+                 geojson.type === 'Polygon' || geojson.type === 'MultiPoint' || 
+                 geojson.type === 'MultiLineString' || geojson.type === 'MultiPolygon') {
+            features = [{
+                type: 'Feature',
+                geometry: geojson,
+                properties: {}
+            }];
+        }
+
+        if (features.length === 0) {
+            throw new Error('가져올 수 있는 도형이 없습니다.');
+        }
+
+        let importedCount = 0;
+
+        // 각 feature를 Leaflet 레이어로 변환하여 추가
+        features.forEach(feature => {
+            try {
+                const properties = feature.properties || {};
+                const style = properties.style || {};
+                
+                // 스타일 설정 (저장된 값 또는 기본값)
+                const layerStyle = {
+                    color: style.color || properties.color || properties.stroke || '#3b82f6',
+                    weight: style.weight || properties['stroke-width'] || 3,
+                    fillColor: style.fillColor || properties.fill || properties.color || '#3b82f6',
+                    fillOpacity: style.fillOpacity !== undefined ? style.fillOpacity : (properties['fill-opacity'] || 0.3),
+                    opacity: style.opacity || 1
+                };
+
+                // Circle 특수 처리 (저장 시 Point로 변환되었을 수 있음)
+                if (properties.shapeType === 'circle' && feature.geometry.type === 'Point') {
+                    const center = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+                    const radius = properties.radius || 50000;
+                    const layer = L.circle(center, {
+                        radius: radius,
+                        color: layerStyle.color,
+                        fillColor: layerStyle.fillColor,
+                        fillOpacity: layerStyle.fillOpacity
+                    });
+                    layer._isImported = true; // 가져온 레이어 표시
+                    drawnItems.addLayer(layer);
+                    importedLayers.push(layer); // 추적 목록에 추가
+                    importedCount++;
+                }
+                // Marker 처리
+                else if (properties.shapeType === 'marker' || feature.geometry.type === 'Point') {
+                    const layer = L.geoJSON(feature, {
+                        pointToLayer: function (geoJsonPoint, latlng) {
+                            return L.marker(latlng);
+                        }
+                    });
+                    layer.eachLayer(l => {
+                        l._isImported = true; // 가져온 레이어 표시
+                        drawnItems.addLayer(l);
+                        importedLayers.push(l); // 추적 목록에 추가
+                        importedCount++;
+                    });
+                }
+                // Polyline, Polygon 등 일반 도형
+                else {
+                    const layer = L.geoJSON(feature, {
+                        style: function() {
+                            return layerStyle;
+                        },
+                        pane: 'drawPane'
+                    });
+                    layer.eachLayer(l => {
+                        // 자유 그리기 타입 복원
+                        if (properties.shapeType === 'freehand') {
+                            l.layerType = 'freehand';
+                        }
+                        l._isImported = true; // 가져온 레이어 표시
+                        drawnItems.addLayer(l);
+                        importedLayers.push(l); // 추적 목록에 추가
+                        importedCount++;
+                    });
+                }
+            } catch (featureError) {
+                console.error('Feature 처리 오류:', featureError, feature);
+            }
+        });
+
+        if (importedCount > 0) {
+            // 가져온 도형들을 화면에 맞게 조정
+            if (drawnItems.getLayers().length > 0) {
+                try {
+                    map.fitBounds(drawnItems.getBounds(), { padding: [50, 50] });
+                } catch (e) {
+                    console.log('지도 범위 조정 실패 (정상 작동):', e);
+                }
+            }
+            
+            // 그리기 데이터 저장
+            saveDrawings();
+            
+            alert(`✅ ${importedCount}개의 도형을 성공적으로 가져왔습니다!`);
+            console.log(`✅ GeoJSON 가져오기 완료: ${importedCount}개 (출처: ${source})`);
+        } else {
+            alert('⚠️ 가져올 수 있는 도형이 없습니다.');
+        }
+
+    } catch (error) {
+        console.error('GeoJSON 가져오기 오류:', error);
+        alert('❌ GeoJSON 가져오기 실패\n\n' + error.message);
+    }
+}
+
+// 불러온 레이어만 삭제
+function deleteImportedLayers() {
+    if (importedLayers.length === 0) {
+        alert('⚠️ 삭제할 가져온 데이터가 없습니다.');
+        return;
+    }
+
+    const count = importedLayers.length;
+    
+    if (!confirm(`🗑️ 가져온 ${count}개의 도형을 삭제하시겠습니까?\n\n(직접 그린 도형은 유지됩니다)`)) {
+        return;
+    }
+
+    // 가져온 레이어들을 지도에서 제거
+    importedLayers.forEach(layer => {
+        try {
+            if (drawnItems.hasLayer(layer)) {
+                drawnItems.removeLayer(layer);
+            }
+        } catch (e) {
+            console.error('레이어 삭제 오류:', e);
+        }
+    });
+
+    // 추적 목록 초기화
+    importedLayers = [];
+
+    // 변경사항 저장
+    saveDrawings();
+
+    alert(`✅ ${count}개의 가져온 도형이 삭제되었습니다!`);
+    console.log(`✅ 가져온 레이어 삭제 완료: ${count}개`);
+}
+
 // 채팅에서 사용하는 스마트 검색
 async function smartSearchInChat(query) {
     const messagesContainer = document.getElementById('chat-messages');
@@ -5049,39 +5255,41 @@ function previewGeoJSON() {
         console.log('previewGeoJSON called');
         // 기존 유틸리티 함수 사용
         const data = convertDrawnItemsToGeoJSON();
-        console.log('GeoJSON data converted:', data);
 
         if (!data || data.features.length === 0) {
             alert('먼저 지도에 영역을 그려주세요!');
             return;
         }
 
-        const jsonStr = JSON.stringify(data, null, 2);
-
-        const preview = document.getElementById('geojson-preview');
-        const modal = document.getElementById('geojson-modal');
-
-        console.log('Modal elements:', { preview, modal });
-
-        if (preview && modal) {
-            preview.textContent = jsonStr;
-            modal.style.display = 'flex';
-            console.log('Modal displayed');
-        } else {
-            console.error('GeoJSON 모달 요소를 찾을 수 없습니다.');
-            alert('오류: GeoJSON 모달 요소를 찾을 수 없습니다.');
-        }
+        // 콘솔에 JSON 출력
+        console.log('='.repeat(80));
+        console.log('📄 GeoJSON 미리보기');
+        console.log('='.repeat(80));
+        console.log(JSON.stringify(data, null, 2));
+        console.log('='.repeat(80));
+        console.log(`✅ 총 ${data.features.length}개의 도형`);
+        console.log('='.repeat(80));
+        
+        alert(`✅ GeoJSON이 콘솔에 출력되었습니다!\n\n총 ${data.features.length}개의 도형\n\n개발자 도구(F12) 콘솔 탭을 확인하세요.`);
+        
     } catch (error) {
         console.error('GeoJSON 미리보기 오류:', error);
         alert('미리보기 중 오류가 발생했습니다: ' + error.message);
     }
 }
 
-function closeGeoJSONModal() {
-    const modal = document.getElementById('geojson-modal');
-    if (modal) {
-        modal.style.display = 'none';
+function closeGeoJSONPanel() {
+    const panel = document.getElementById('geojson-preview-panel');
+    if (panel) {
+        panel.classList.remove('active');
+        panel.style.right = '-500px';
+        console.log('✅ GeoJSON 패널 닫힘');
     }
+}
+
+// 기존 모달 함수는 패널 함수로 리다이렉트
+function closeGeoJSONModal() {
+    closeGeoJSONPanel();
 }
 
 function copyGeoJSONToClipboard() {
