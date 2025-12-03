@@ -4027,23 +4027,10 @@ function toggleDrawPanel() {
     const btn = document.getElementById('draw-panel-btn');
 
     if (panel.classList.contains('open')) {
+        // 패널 닫기 - 하지만 그리기 도구는 유지
         panel.classList.remove('open');
         btn.classList.remove('active');
-        // 활성 도구 비활성화
-        if (currentDrawHandler) {
-            currentDrawHandler.disable();
-            currentDrawHandler = null;
-        }
-        // 자유 그리기 모드 비활성화
-        if (isFreehandDrawing) {
-            deactivateFreehand();
-        }
-        // 지우개 모드 비활성화
-        if (isEraserActive) {
-            deactivateEraser();
-        }
-        // 모든 버튼 비활성화
-        document.querySelectorAll('.draw-tool-btn').forEach(b => b.classList.remove('active'));
+        // 그리기 도구는 비활성화하지 않음 (자유 그리기, 지우개 등 계속 사용 가능)
     } else {
         panel.classList.add('open');
         btn.classList.add('active');
