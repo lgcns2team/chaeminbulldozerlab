@@ -590,7 +590,8 @@ body {
 /* 이벤트 마커 스타일 */
 .battle-marker,
 .trade-marker,
-.people-marker {
+.people-marker,
+.city-marker {
     background: transparent !important;
     border: none !important;
 }
@@ -611,6 +612,19 @@ body {
 .event-marker-content:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.city-marker .event-marker-content {
+    padding: 4px 10px;
+    border-radius: 16px;
+}
+
+.city-marker .event-icon {
+    font-size: 14px;
+}
+
+.city-marker .event-label {
+    font-size: 11px;
 }
 
 .event-icon {

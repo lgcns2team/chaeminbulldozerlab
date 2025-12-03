@@ -26,6 +26,7 @@ let currentDrawHandler = null; // 현재 활성 그리기 핸들러
 let isFreehandDrawing = false; // 자유 그리기 모드
 let freehandPath = []; // 자유 그리기 경로
 let freehandPolyline = null; // 자유 그리기 임시 선
+let currentDrawColor = '#ef4444'; // 현재 그리기 색상 (기본: 빨강)
 
 // 시대 줌 관련 변수
 let currentEraIndex = 0; // 기본값: 고조선 (-1300년)
@@ -205,6 +206,55 @@ const WARS = {
     'WAR_MG': { name: '몽골 침입', startYear: 1231, endYear: 1270 },
     'WAR_RB': { name: '홍건적의 난', startYear: 1362, endYear: 1362 },
     'WAR_JP': { name: '왜구 격퇴전', startYear: 1380, endYear: 1380 }
+};
+
+// 전쟁별 주요 도시 (이동 경로상의 거점)
+const WAR_CITIES = {
+    'WAR_TK': [
+        { name: '개경(고려)', lat: 37.98, lng: 126.55, type: 'capital', desc: '고려의 수도' },
+        { name: '금성(신라)', lat: 35.84, lng: 129.21, type: 'capital', desc: '신라의 수도' },
+        { name: '전주(후백제)', lat: 35.82, lng: 127.15, type: 'capital', desc: '후백제의 수도' },
+        { name: '대구', lat: 35.87, lng: 128.60, type: 'city', desc: '공산 전투 인근 주요 도시' },
+        { name: '안동', lat: 36.57, lng: 128.73, type: 'city', desc: '고창 전투 지역' },
+        { name: '선산', lat: 36.24, lng: 128.36, type: 'city', desc: '일리천 전투 인근' }
+    ],
+    'WAR_KH': [
+        { name: '개경', lat: 37.98, lng: 126.55, type: 'capital', desc: '고려의 수도' },
+        { name: '의주', lat: 40.19, lng: 124.53, type: 'city', desc: '압록강 인근 국경 도시' },
+        { name: '안융진', lat: 39.61, lng: 125.66, type: 'fortress', desc: '서희 담판 장소' },
+        { name: '흥화진', lat: 40.19, lng: 124.53, type: 'fortress', desc: '양규가 방어한 요새' },
+        { name: '귀주', lat: 39.97, lng: 125.24, type: 'fortress', desc: '귀주대첩 전투지' },
+        { name: '평양', lat: 39.03, lng: 125.76, type: 'city', desc: '거란군 침입 경로' },
+        { name: '서경', lat: 39.03, lng: 125.76, type: 'city', desc: '평양 (고려 서경)' }
+    ],
+    'WAR_JR': [
+        { name: '개경', lat: 37.98, lng: 126.55, type: 'capital', desc: '고려의 수도' },
+        { name: '함주', lat: 39.86, lng: 127.53, type: 'city', desc: '동북 9성 인근 거점' },
+        { name: '공험진', lat: 40.25, lng: 127.5, type: 'fortress', desc: '여진 정벌 출발지' },
+        { name: '정주', lat: 39.69, lng: 125.20, type: 'city', desc: '북방 군사 거점' }
+    ],
+    'WAR_MG': [
+        { name: '개경', lat: 37.98, lng: 126.55, type: 'capital', desc: '고려의 수도 (후에 함락)' },
+        { name: '강화도', lat: 37.75, lng: 126.48, type: 'capital', desc: '임시 수도 (1232-1270)' },
+        { name: '귀주성', lat: 39.97, lng: 125.24, type: 'fortress', desc: '박서가 방어' },
+        { name: '처인성', lat: 37.15, lng: 127.2, type: 'fortress', desc: '김윤후가 살리타 사살' },
+        { name: '죽주성', lat: 37.08, lng: 127.42, type: 'fortress', desc: '송문주가 방어' },
+        { name: '충주성', lat: 36.97, lng: 127.93, type: 'fortress', desc: '김윤후가 방어' },
+        { name: '진도', lat: 34.48, lng: 126.26, type: 'fortress', desc: '삼별초 항쟁지 (용장성)' },
+        { name: '제주', lat: 33.51, lng: 126.53, type: 'city', desc: '삼별초 최후 항전지' }
+    ],
+    'WAR_RB': [
+        { name: '개경', lat: 37.98, lng: 126.55, type: 'capital', desc: '고려 수도 (홍건적에게 점령당함)' },
+        { name: '압록강', lat: 40.07, lng: 124.40, type: 'city', desc: '홍건적 침입로' },
+        { name: '의주', lat: 40.19, lng: 124.53, type: 'city', desc: '북방 국경 도시' }
+    ],
+    'WAR_JP': [
+        { name: '개경', lat: 37.98, lng: 126.55, type: 'capital', desc: '고려의 수도' },
+        { name: '진포', lat: 36.0, lng: 126.7, type: 'port', desc: '진포대첩 전투지 (군산)' },
+        { name: '남원', lat: 35.42, lng: 127.39, type: 'city', desc: '황산대첩 인근 도시' },
+        { name: '운봉', lat: 35.45, lng: 127.5, type: 'city', desc: '황산대첩 전투지' },
+        { name: '전주', lat: 35.82, lng: 127.15, type: 'city', desc: '전라도 주요 도시' }
+    ]
 };
 
 // 역사적 전투 데이터
@@ -1244,6 +1294,9 @@ function showBattleMarkers(year) {
 
     if (!battles) return;
 
+    // 현재 년도에 진행 중인 전쟁 ID들 수집
+    const activeWarIds = new Set();
+
     battles.forEach(battle => {
         // 전쟁 기간 필터링: 전투의 warId로 전쟁 정보를 가져와서 현재 년도가 전쟁 기간 내에 있는지 확인
         if (battle.warId && WARS[battle.warId]) {
@@ -1252,6 +1305,8 @@ function showBattleMarkers(year) {
             if (year < war.startYear || year > war.endYear) {
                 return;
             }
+            // 활성 전쟁 ID 저장
+            activeWarIds.add(battle.warId);
         }
 
         // 전투 마커
@@ -1449,6 +1504,65 @@ function showBattleMarkers(year) {
 
             eventMarkers.push(fromMarker);
         }
+    });
+
+    // 활성화된 전쟁의 주요 도시 표시
+    activeWarIds.forEach(warId => {
+        const cities = WAR_CITIES[warId];
+        if (!cities) return;
+
+        cities.forEach(city => {
+            // 도시 타입별 아이콘 및 색상
+            let cityIcon = '🏛️';
+            let cityColor = '#3b82f6';
+            
+            switch(city.type) {
+                case 'capital':
+                    cityIcon = '👑';
+                    cityColor = '#fbbf24';
+                    break;
+                case 'fortress':
+                    cityIcon = '🏰';
+                    cityColor = '#9333ea';
+                    break;
+                case 'port':
+                    cityIcon = '⚓';
+                    cityColor = '#06b6d4';
+                    break;
+                case 'city':
+                    cityIcon = '🏛️';
+                    cityColor = '#3b82f6';
+                    break;
+            }
+
+            const icon = L.divIcon({
+                className: 'city-marker',
+                html: `
+                    <div class="event-marker-content" style="background: ${cityColor}; opacity: 0.85;">
+                        <div class="event-icon">${cityIcon}</div>
+                        <div class="event-label" style="font-size: 11px;">${city.name}</div>
+                    </div>
+                `,
+                iconSize: [80, 32],
+                iconAnchor: [40, 16]
+            });
+
+            const marker = L.marker([city.lat, city.lng], { icon: icon })
+                .addTo(map)
+                .bindPopup(
+                    `<div style="font-family: sans-serif; padding: 12px; min-width: 200px;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #1f2937; font-weight: 700;">${cityIcon} ${city.name}</h3>
+                        <p style="margin: 0 0 4px 0; font-size: 13px; color: ${cityColor};"><strong>유형:</strong> ${city.type === 'capital' ? '수도' : city.type === 'fortress' ? '요새' : city.type === 'port' ? '항구' : '도시'}</p>
+                        <p style="margin: 0; font-size: 12px; color: #6b7280;">${city.desc}</p>
+                    </div>`,
+                    {
+                        className: 'custom-popup',
+                        offset: [0, -12]
+                    }
+                );
+
+            eventMarkers.push(marker);
+        });
     });
 }
 
@@ -3969,24 +4083,24 @@ function activateDrawTool(type) {
         return;
     }
 
-    // 새 핸들러 생성 및 활성화
+    // 새 핸들러 생성 및 활성화 (현재 선택된 색상 사용)
     let options = {};
 
     switch (type) {
         case 'polyline':
-            options = { shapeOptions: { color: '#3b82f6', weight: 4 } };
+            options = { shapeOptions: { color: currentDrawColor, weight: 4 } };
             currentDrawHandler = new L.Draw.Polyline(map, options);
             break;
         case 'polygon':
-            options = { shapeOptions: { color: '#ef4444', fillOpacity: 0.3 } };
+            options = { shapeOptions: { color: currentDrawColor, fillColor: currentDrawColor, fillOpacity: 0.3 } };
             currentDrawHandler = new L.Draw.Polygon(map, options);
             break;
         case 'rectangle':
-            options = { shapeOptions: { color: '#f59e0b', fillOpacity: 0.3 } };
+            options = { shapeOptions: { color: currentDrawColor, fillColor: currentDrawColor, fillOpacity: 0.3 } };
             currentDrawHandler = new L.Draw.Rectangle(map, options);
             break;
         case 'circle':
-            options = { shapeOptions: { color: '#10b981', fillOpacity: 0.3 } };
+            options = { shapeOptions: { color: currentDrawColor, fillColor: currentDrawColor, fillOpacity: 0.3 } };
             currentDrawHandler = new L.Draw.Circle(map, options);
             break;
         case 'marker':
@@ -4090,9 +4204,9 @@ function onFreehandMouseDown(e) {
 
     freehandPath = [e.latlng];
 
-    // 임시 선 생성
+    // 임시 선 생성 (현재 선택된 색상 사용)
     freehandPolyline = L.polyline(freehandPath, {
-        color: '#ef4444',
+        color: currentDrawColor,
         weight: 3,
         opacity: 0.8
     }).addTo(map);
@@ -4127,9 +4241,9 @@ function onFreehandMouseUp(e) {
     // 부드럽게 만들기 (점 간격 최적화)
     const smoothPath = smoothFreehandPath(freehandPath);
 
-    // 최종 선 생성
+    // 최종 선 생성 (현재 선택된 색상 사용)
     const finalLine = L.polyline(smoothPath, {
-        color: '#ef4444',
+        color: currentDrawColor,
         weight: 3,
         opacity: 1,
         pane: 'drawPane'  // 그리기 전용 pane 사용
@@ -5206,3 +5320,33 @@ function copyGeoJSONToClipboard() {
         });
     }
 }
+
+// 그리기 색상 변경 함수
+function setDrawColor(color) {
+    currentDrawColor = color;
+    
+    // 색상 선택기도 동기화
+    const colorPicker = document.getElementById('draw-color-picker');
+    if (colorPicker) {
+        colorPicker.value = color;
+    }
+    
+    // 현재 활성화된 그리기 도구가 있다면 색상 업데이트
+    if (currentDrawHandler && currentDrawHandler._marker) {
+        // 진행 중인 그리기의 색상 업데이트
+        if (currentDrawHandler.options && currentDrawHandler.options.shapeOptions) {
+            currentDrawHandler.options.shapeOptions.color = color;
+            currentDrawHandler.options.shapeOptions.fillColor = color;
+        }
+    }
+}
+
+// 색상 선택기 변경 이벤트 (페이지 로드 후 등록)
+document.addEventListener('DOMContentLoaded', function() {
+    const colorPicker = document.getElementById('draw-color-picker');
+    if (colorPicker) {
+        colorPicker.addEventListener('change', function(e) {
+            setDrawColor(e.target.value);
+        });
+    }
+});
