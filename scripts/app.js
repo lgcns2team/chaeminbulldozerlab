@@ -4648,43 +4648,40 @@ function convertDrawnItemsToGeoJSON() {
         try {
             let feature;
 
-            // 1. Polyline(자유 그리기 포함)을 Polygon으로 변환
+            // 1. Polyline을 LineString으로 변환
             if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
-                // Polyline의 좌표를 가져옴
                 const latlngs = layer.getLatLngs();
-
-                // 좌표가 중첩 배열인 경우 (MultiPolyline 등) 평탄화 필요할 수 있음
-                // 여기서는 단순 Polyline 가정
-
-                // GeoJSON Polygon 형식으로 변환 (첫 점과 끝 점이 같아야 함)
-                // Leaflet의 toGeoJSON()은 Polyline을 LineString으로 변환하므로,
-                // 수동으로 Polygon Feature를 생성합니다.
-
                 const coordinates = latlngs.map(latlng => [latlng.lng, latlng.lat]);
 
-                // 닫힌 루프가 아니면 첫 점을 끝에 추가
-                if (coordinates.length > 2) {
-                    const first = coordinates[0];
-                    const last = coordinates[coordinates.length - 1];
-                    if (first[0] !== last[0] || first[1] !== last[1]) {
-                        coordinates.push(first);
+                feature = {
+                    type: "Feature",
+                    properties: {},
+                    geometry: {
+                        type: "LineString",
+                        coordinates: coordinates
                     }
+                };
+                console.log('Polyline을 LineString으로 변환했습니다.');
+            } 
+            // 2. Polygon을 LineString으로 변환
+            else if (layer instanceof L.Polygon) {
+                const latlngs = layer.getLatLngs();
+                // Polygon은 중첩 배열 구조 [[lat,lng], ...]
+                const coords = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs;
+                const coordinates = coords.map(latlng => [latlng.lng, latlng.lat]);
 
-                    feature = {
-                        type: "Feature",
-                        properties: {},
-                        geometry: {
-                            type: "Polygon",
-                            coordinates: [coordinates]
-                        }
-                    };
-                    console.log('Polyline을 Polygon으로 변환했습니다.');
-                } else {
-                    // 점이 너무 적으면 그냥 LineString으로
-                    feature = layer.toGeoJSON();
-                }
-            } else {
-                // 2. 이미 Polygon이거나 다른 도형인 경우
+                feature = {
+                    type: "Feature",
+                    properties: {},
+                    geometry: {
+                        type: "LineString",
+                        coordinates: coordinates
+                    }
+                };
+                console.log('Polygon을 LineString으로 변환했습니다.');
+            } 
+            // 3. 기타 도형
+            else {
                 feature = layer.toGeoJSON();
             }
 
@@ -4695,12 +4692,8 @@ function convertDrawnItemsToGeoJSON() {
                 NAME: name,
                 name: name,
                 color: color,
-                fill: color,
-                'fill-opacity': 0.5,
                 stroke: color,
-                'stroke-width': 2,
-                // 원래 타입 정보 저장 (참고용)
-                originalType: layer instanceof L.Polygon ? 'polygon' : 'polyline'
+                'stroke-width': 2
             };
 
             features.push(feature);
@@ -4723,15 +4716,8 @@ function convertDrawnItemsToGeoJSON() {
                 allPoints.push(...freehandPath);
             }
 
-            if (allPoints.length > 2) {
+            if (allPoints.length > 1) {
                 const coordinates = allPoints.map(latlng => [latlng.lng, latlng.lat]);
-                
-                // 닫힌 루프로 만들기
-                const first = coordinates[0];
-                const last = coordinates[coordinates.length - 1];
-                if (first[0] !== last[0] || first[1] !== last[1]) {
-                    coordinates.push(first);
-                }
 
                 const feature = {
                     type: "Feature",
@@ -4739,21 +4725,18 @@ function convertDrawnItemsToGeoJSON() {
                         NAME: name,
                         name: name,
                         color: color,
-                        fill: color,
-                        'fill-opacity': 0.5,
                         stroke: color,
-                        'stroke-width': 2,
-                        originalType: 'freehand-inprogress'
+                        'stroke-width': 2
                     },
                     geometry: {
-                        type: "Polygon",
-                        coordinates: [coordinates]
+                        type: "LineString",
+                        coordinates: coordinates
                     }
                 };
 
                 features.push(feature);
                 convertedCount++;
-                console.log('진행 중인 자유 그리기를 Polygon으로 변환했습니다.');
+                console.log('진행 중인 자유 그리기를 LineString으로 변환했습니다.');
             }
         } catch (e) {
             console.error('진행 중인 자유 그리기 변환 실패:', e);
@@ -4775,6 +4758,16 @@ function convertDrawnItemsToGeoJSON() {
 
 // GeoJSON 다운로드
 function exportToGeoJSON() {
+    const nameInput = document.getElementById('geojson-name');
+    const name = nameInput.value.trim();
+
+    // 이름이 비어있으면 입력 요구
+    if (!name) {
+        alert('⚠️ 국가/지역 이름을 입력해주세요!');
+        nameInput.focus();
+        return;
+    }
+
     const geojson = convertDrawnItemsToGeoJSON();
 
     if (!geojson || geojson.features.length === 0) {
@@ -4782,7 +4775,6 @@ function exportToGeoJSON() {
         return;
     }
 
-    const name = document.getElementById('geojson-name').value || 'map-data';
     const filename = `${name.replace(/\s+/g, '_').toLowerCase()}.geojson`;
 
     downloadGeoJSON(geojson, filename);
@@ -4806,6 +4798,16 @@ function downloadGeoJSON(geojson, filename) {
 
 // 클립보드에 복사
 function copyGeoJSONToClipboard() {
+    const nameInput = document.getElementById('geojson-name');
+    const name = nameInput.value.trim();
+
+    // 이름이 비어있으면 입력 요구
+    if (!name) {
+        alert('⚠️ 국가/지역 이름을 입력해주세요!');
+        nameInput.focus();
+        return;
+    }
+
     const geojson = convertDrawnItemsToGeoJSON();
 
     if (!geojson || geojson.features.length === 0) {
