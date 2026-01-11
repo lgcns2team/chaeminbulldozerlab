@@ -1,0 +1,111 @@
+{
+  "type": "FeatureCollection",
+  "name": "몽골 침입 피해 지역 (1235-1239)",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "warId": "WAR_MG",
+        "name": "충주",
+        "year": 1235,
+        "description": "몽골군의 침입으로 피해를 입은 충주 지역",
+        "color": "#ff0000",
+        "fill-opacity": 0.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [127.93, 36.97]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "warId": "WAR_MG",
+        "name": "처인성",
+        "year": 1232,
+        "description": "김윤후가 살리타를 사살한 전투지",
+        "color": "#00ff00",
+        "fill-opacity": 0.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [127.20, 37.15]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "warId": "WAR_MG",
+        "name": "죽주성",
+        "year": 1232,
+        "description": "송문주가 방어한 전투지",
+        "color": "#00ff00",
+        "fill-opacity": 0.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [127.42, 37.08]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "warId": "WAR_MG",
+        "name": "나주",
+        "year": 1239,
+        "description": "몽골군의 호남 지역 침입 거점",
+        "color": "#ff0000",
+        "fill-opacity": 0.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [126.72, 35.03]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "warId": "WAR_MG",
+        "name": "동경 (경주)",
+        "year": 1238,
+        "description": "몽골군의 영남 지역 침입으로 황룡사 9층탑 소실",
+        "color": "#ff0000",
+        "fill-opacity": 0.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [129.22, 35.85]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "warId": "WAR_MG",
+        "name": "전주",
+        "year": 1239,
+        "description": "몽골군의 전라도 침입 거점",
+        "color": "#ff0000",
+        "fill-opacity": 0.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [127.15, 35.82]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "warId": "WAR_MG",
+        "name": "합천",
+        "year": 1238,
+        "description": "몽골군의 경상도 내륙 침입 지역",
+        "color": "#ff0000",
+        "fill-opacity": 0.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [128.17, 35.57]
+      }
+    }
+  ]
+}
